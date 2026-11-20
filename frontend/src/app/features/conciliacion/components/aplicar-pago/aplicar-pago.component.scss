@@ -1,0 +1,118 @@
+@use '../../../../../styles/variables' as *;
+
+.aplicar-pago { display: flex; flex-direction: column; height: 100%; }
+.aplicar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: $space-lg; border-bottom: 1px solid $color-border;
+  h2 { font-size: 15px; margin: 0; }
+}
+.aplicar-body { flex: 1; overflow-y: auto; padding: $space-lg; }
+.aplicar-footer {
+  padding: $space-md $space-lg; border-top: 1px solid $color-border;
+  display: flex; justify-content: flex-end; background: #fff;
+}
+
+.bloque { margin-bottom: $space-lg; }
+.bloque-title {
+  font-size: 12px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; color: $color-text-soft; margin-bottom: $space-sm;
+  display: flex; align-items: center; gap: $space-xs;
+  i { color: $color-primary; }
+}
+
+.data-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: $space-md;
+  label { display: block; font-size: 11px; color: $color-text-muted; }
+  span { font-size: 13px; color: $color-text; }
+  .monto { font-weight: 600; }
+}
+
+.banner-excedente {
+  display: flex;
+  gap: $space-md;
+  padding: $space-md $space-lg;
+  border: 1px solid $color-primary;
+  border-radius: $radius-md;
+  background: rgba(91, 133, 232, 0.08);
+  margin-bottom: $space-lg;
+}
+.banner-icon {
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #fff; border-radius: $radius-md;
+  color: $color-primary; font-size: 18px;
+  flex-shrink: 0;
+}
+.banner-content { flex: 1; min-width: 0; }
+.banner-title { font-size: 13px; font-weight: 600; color: $color-text; margin-bottom: 2px; }
+.banner-desc { font-size: 12px; color: $color-text-soft; margin-bottom: $space-sm; }
+.banner-acciones { display: flex; gap: $space-sm; flex-wrap: wrap; }
+
+.sugerencia {
+  border: 1px solid $color-border; border-radius: $radius-md;
+  padding: $space-md; margin-bottom: $space-sm; background: $color-bg-soft;
+}
+.sugerencia-header {
+  display: flex; align-items: center; gap: $space-sm; margin-bottom: $space-sm;
+  .score { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: $radius-sm;
+    &.ok { background: #eaf5ec; color: $color-success; }
+    &.warn { background: #fff4e5; color: #b26a00; }
+    &.muted { background: $color-border; color: $color-text-muted; }
+  }
+  .folio { font-size: 13px; font-weight: 600; color: $color-text; }
+}
+.sugerencia-body {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: $space-sm;
+  label { font-size: 11px; color: $color-text-muted; display: block; }
+  span { font-size: 12px; color: $color-text; }
+  .motivo { color: $color-text-soft; font-style: italic; font-size: 11px; }
+}
+.sugerencia-acciones { margin-top: $space-sm; text-align: right; }
+
+.btn-toggle {
+  background: transparent; border: none; font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em; color: $color-text-soft;
+  cursor: pointer; display: flex; align-items: center; gap: $space-xs; padding: 0;
+  &:hover { color: $color-text; }
+}
+
+.lista-facturas {
+  border: 1px solid $color-border; border-radius: $radius-md;
+  max-height: 240px; overflow-y: auto; margin-top: $space-sm;
+  background: #fff;
+}
+.factura-item {
+  display: grid; grid-template-columns: 80px 1fr 120px;
+  gap: $space-sm; padding: $space-sm $space-md;
+  font-size: 12px; border-bottom: 1px solid $color-border;
+  cursor: pointer;
+  &:hover { background: $color-bg-soft; }
+  &:last-child { border-bottom: none; }
+  .folio { font-weight: 600; color: $color-primary; }
+  .receptor { color: $color-text; }
+  .saldo { color: $color-text-soft; font-variant-numeric: tabular-nums; text-align: right; }
+}
+
+.factura-seleccionada {
+  margin-top: $space-md; padding: $space-md;
+  border: 1px solid $color-primary; border-radius: $radius-md;
+  background: rgba(91,133,232,0.03);
+  > div { margin-bottom: $space-sm; font-size: 13px; }
+  .receptor { color: $color-text-soft; margin-left: $space-sm; }
+  .saldo { color: $color-success; font-weight: 600; }
+  .monto-input {
+    label { display: block; font-size: 11px; color: $color-text-muted; margin-bottom: 2px; }
+  }
+  button { margin-right: $space-sm; }
+}
+
+.empty-hint { font-size: 12px; color: $color-text-muted; padding: $space-md; text-align: center; }
+.alert-danger { background: #fdecec; color: $color-danger; padding: $space-sm $space-md; border-radius: $radius-md; font-size: 12px; }
+.btn-close-soft {
+  border: none; background: transparent; color: $color-text-muted; padding: $space-xs;
+  border-radius: $radius-sm; cursor: pointer;
+  &:hover { background: $color-bg-soft; color: $color-text; }
+}
+.spin { display: inline-block; animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

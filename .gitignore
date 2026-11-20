@@ -1,0 +1,12 @@
+/.conda/
+/.venv/
+/.vercel/
+/.vscode/
+**/.env
+**/.env.*
+!**/.env.example
+**/__pycache__/
+/data/
+/backend/instance/
+/backend/tessdata/
+/backend/web/

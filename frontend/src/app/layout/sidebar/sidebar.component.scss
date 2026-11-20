@@ -1,0 +1,113 @@
+@use '../../../styles/variables' as *;
+
+.sidebar {
+  width: $sidebar-width;
+  min-height: 100vh;
+  background-color: $color-sidebar;
+  border-right: 1px solid $color-border;
+  display: flex;
+  flex-direction: column;
+  padding: $space-md 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  padding: 0 $space-lg $space-md;
+  font-weight: 600;
+  font-size: 15px;
+  color: $color-text;
+
+  i {
+    color: $color-primary;
+    font-size: 18px;
+  }
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 0 $space-sm;
+}
+
+.nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    margin: 2px 0;
+  }
+}
+
+.nav-section-title {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  padding: 8px $space-md;
+  color: $color-text-soft;
+  font-size: 13px;
+  font-weight: 600;
+
+  i {
+    width: 16px;
+    text-align: center;
+    color: $color-text-muted;
+  }
+}
+
+.nav-sublist {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 $space-md;
+}
+
+.nav-item.nav-subitem {
+  font-size: 12px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  padding: 8px $space-md;
+  border-radius: $radius-md;
+  font-size: 13px;
+  color: $color-text-soft;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  i {
+    font-size: 14px;
+    color: $color-text-muted;
+    width: 16px;
+    text-align: center;
+  }
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+    color: $color-text;
+  }
+
+  &.active {
+    background-color: rgba(47, 111, 237, 0.08);
+    color: $color-primary;
+    font-weight: 500;
+
+    i {
+      color: $color-primary;
+    }
+  }
+}
+
+.sidebar-footer {
+  padding: $space-md $space-lg 0;
+  border-top: 1px solid $color-border;
+  color: $color-text-muted;
+  font-size: 11px;
+}

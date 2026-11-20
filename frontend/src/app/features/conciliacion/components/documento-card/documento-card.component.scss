@@ -1,0 +1,97 @@
+@use '../../../../../styles/variables' as *;
+
+.doc-card {
+  display: flex;
+  gap: $space-lg;
+  padding: $space-lg;
+  border: 1px dashed $color-border-strong;
+  border-radius: $radius-lg;
+  background-color: $color-bg-soft;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  min-height: 120px;
+
+  &:not(.disabled):hover {
+    border-color: $color-primary;
+    background-color: #ffffff;
+  }
+
+  &.disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    background-color: #fbfbfa;
+  }
+}
+
+.doc-card-icon {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: $radius-md;
+  background-color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid $color-border;
+  color: $color-text-soft;
+
+  i {
+    font-size: 20px;
+  }
+}
+
+.doc-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.doc-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: $color-text;
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  margin-bottom: $space-xs;
+}
+
+.badge-soon {
+  display: inline-block;
+  padding: 1px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: $radius-sm;
+  background-color: #fff4e5;
+  color: #b26a00;
+}
+
+.doc-card-desc {
+  font-size: 12px;
+  color: $color-text-muted;
+  margin: 0 0 $space-sm 0;
+}
+
+.doc-card-action {
+  display: flex;
+  align-items: center;
+  gap: $space-md;
+  flex-wrap: wrap;
+}
+
+.doc-card-file {
+  font-size: 12px;
+  color: $color-text-soft;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-xs;
+
+  i {
+    color: $color-primary;
+  }
+}
+
+.disabled-hint {
+  font-size: 12px;
+  color: $color-text-muted;
+}

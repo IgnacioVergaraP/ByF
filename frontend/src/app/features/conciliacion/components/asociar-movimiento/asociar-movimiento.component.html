@@ -1,0 +1,115 @@
+<div class="asociar">
+  <div class="asociar-header">
+    <h2>{{ modo === 'crear' ? 'Asociar movimiento' : 'Corregir asociación' }}</h2>
+    <button type="button" class="btn-close-soft" (click)="cancelar()">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <div class="asociar-body">
+    <!-- Datos del movimiento -->
+    <div class="bloque" *ngIf="movimiento">
+      <div class="bloque-title">Movimiento bancario</div>
+      <div class="data-grid">
+        <div><label>Fecha</label><span>{{ movimiento.fecha }}</span></div>
+        <div><label>Depositante</label><span>{{ movimiento.depositante_original || '(sin identificar)' }}</span></div>
+        <div><label>Monto</label><span class="monto">$ {{ movimiento.monto | number:'1.0-0' }}</span></div>
+      </div>
+      <p class="descripcion">{{ movimiento.descripcion_original }}</p>
+    </div>
+
+    <!-- Sugerencias -->
+    <div class="bloque" *ngIf="loadingSugerencias">
+      <i class="bi bi-arrow-repeat spin"></i> Cargando sugerencias…
+    </div>
+
+    <div class="bloque" *ngIf="sugerencias?.coincidencia_exacta">
+      <div class="bloque-title">
+        <i class="bi bi-lightning-charge"></i> Coincidencia histórica
+      </div>
+      <div class="sugerencia-card" *ngIf="sugerencias?.coincidencia_exacta?.arrendatario as arr">
+        <div class="sugerencia-nombre">{{ arr.nombre_original }}</div>
+        <div class="sugerencia-props">
+          <span class="tag" *ngFor="let p of sugerencias?.coincidencia_exacta?.propiedades">
+            {{ p.nombre_original }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bloque" *ngIf="(sugerencias?.sugerencias?.length ?? 0) > 0">
+      <div class="bloque-title">Sugerencias por historial</div>
+      <div class="sugerencia-card" *ngFor="let s of sugerencias?.sugerencias">
+        <div class="sugerencia-nombre">{{ s.arrendatario?.nombre_original }}</div>
+        <div class="sugerencia-props">
+          <span class="tag" *ngFor="let p of s.propiedades">{{ p.nombre_original }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Buscador de arrendatario -->
+    <div class="bloque">
+      <div class="bloque-title">Seleccionar arrendatario</div>
+      <input
+        type="text"
+        class="form-control-soft"
+        placeholder="Buscar arrendatario…"
+        [(ngModel)]="busquedaArrendatario"
+        (ngModelChange)="filtrarArrendatarios()"
+      />
+      <ul class="lista-arrendatarios" *ngIf="!arrendatarioSeleccionado">
+        <li *ngFor="let a of arrendatariosFiltrados">
+          <button type="button" class="btn-link" (click)="elegirArrendatario(a)">
+            {{ a.nombre_original }}
+          </button>
+        </li>
+      </ul>
+      <div class="seleccionado" *ngIf="arrendatarioSeleccionado">
+        <i class="bi bi-check-circle-fill"></i>
+        {{ arrendatarioSeleccionado.nombre_original }}
+        <button type="button" class="btn btn-ghost btn-sm" (click)="arrendatarioSeleccionado = null; propiedadesDelArrendatario = []">
+          Cambiar
+        </button>
+      </div>
+    </div>
+
+    <!-- Propiedades del arrendatario -->
+    <div class="bloque" *ngIf="arrendatarioSeleccionado">
+      <div class="bloque-title">Propiedades y conceptos</div>
+      <div class="prop-card" *ngFor="let p of propiedadesDelArrendatario">
+        <label class="prop-check">
+          <input type="checkbox" [checked]="p.seleccionada" (change)="toggleSeleccion(p)" />
+          <span>{{ p.nombre }}</span>
+        </label>
+        <div class="conceptos" *ngIf="p.seleccionada">
+          <label *ngFor="let c of p.conceptosDisponibles" class="concepto-check">
+            <input
+              type="checkbox"
+              [checked]="p.conceptosSeleccionados.includes(c)"
+              (change)="toggleConcepto(p, c)"
+            />
+            {{ c }}
+          </label>
+          <span class="hint" *ngIf="p.conceptosDisponibles.length === 0">
+            Esta propiedad no tiene conceptos registrados en el maestro.
+          </span>
+        </div>
+      </div>
+      <p class="empty-hint" *ngIf="propiedadesDelArrendatario.length === 0">
+        Este arrendatario no tiene propiedades registradas en el maestro.
+      </p>
+    </div>
+
+    <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+  </div>
+
+  <div class="asociar-footer">
+    <button type="button" class="btn btn-ghost btn-sm" (click)="cancelar()" [disabled]="guardando">
+      Cancelar
+    </button>
+    <button type="button" class="btn btn-primary btn-sm" (click)="confirmar()" [disabled]="guardando || !arrendatarioSeleccionado">
+      <i class="bi bi-check2"></i>
+      {{ guardando ? 'Guardando…' : (modo === 'crear' ? 'Confirmar asociación' : 'Guardar corrección') }}
+    </button>
+  </div>
+</div>

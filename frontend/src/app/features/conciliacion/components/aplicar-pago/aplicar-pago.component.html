@@ -1,0 +1,138 @@
+<div class="aplicar-pago">
+  <div class="aplicar-header">
+    <h2>Aplicar pago</h2>
+    <button type="button" class="btn-close-soft" (click)="cancelar()">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <div class="aplicar-body">
+    <div class="bloque" *ngIf="movimiento">
+      <div class="bloque-title">Movimiento</div>
+      <div class="data-grid">
+        <div><label>Fecha</label><span>{{ movimiento.fecha }}</span></div>
+        <div><label>Depositante</label><span>{{ movimiento.depositante_original }}</span></div>
+        <div><label>Monto</label><span class="monto">$ {{ movimiento.monto | number:'1.0-0' }}</span></div>
+        <div><label>Disponible</label><span class="monto">$ {{ movimiento.disponible | number:'1.0-0' }}</span></div>
+      </div>
+    </div>
+
+    <!-- Banner excedente -->
+    <div class="banner-excedente" *ngIf="excedente && excedente.facturas_candidatas.length > 0">
+      <div class="banner-icon"><i class="bi bi-wallet2"></i></div>
+      <div class="banner-content">
+        <div class="banner-title">
+          Este depósito tiene ${{ excedente.monto_disponible | number:'1.0-0' }} sin aplicar.
+        </div>
+        <div class="banner-desc">¿Aplicar a otra factura del mismo arrendatario?</div>
+        <div class="banner-acciones">
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            *ngFor="let f of excedente.facturas_candidatas"
+            (click)="aplicarExcedente(f)"
+            [disabled]="guardando"
+          >
+            <i class="bi bi-check2"></i>
+            Aplicar a N° {{ f.folio }} (${{ f.saldo_pendiente | number:'1.0-0' }})
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="ignorarExcedente()" [disabled]="guardando">
+            Ignorar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sugerencias -->
+    <div class="bloque" *ngIf="loading">
+      <i class="bi bi-arrow-repeat spin"></i> Buscando sugerencias…
+    </div>
+
+    <div class="bloque" *ngIf="!loading && sugerencias.length > 0">
+      <div class="bloque-title">
+        <i class="bi bi-lightning-charge"></i> Sugerencias
+      </div>
+      <div class="sugerencia" *ngFor="let s of sugerencias">
+        <div class="sugerencia-header">
+          <span class="score" [ngClass]="scoreClass(s.score)">{{ s.score }}%</span>
+          <span class="folio">Factura N° {{ s.factura_folio }}</span>
+        </div>
+        <div class="sugerencia-body">
+          <div><label>Arrendatario</label><span>{{ s.arrendatario_nombre }}</span></div>
+          <div><label>Propiedad</label><span>{{ s.propiedad_nombre }}</span></div>
+          <div><label>Saldo factura</label><span>$ {{ s.factura_saldo | number:'1.0-0' }}</span></div>
+          <div><label>Motivo</label><span class="motivo">{{ s.motivo.join(' · ') }}</span></div>
+        </div>
+        <div class="sugerencia-acciones">
+          <button type="button" class="btn btn-primary btn-sm" (click)="aplicarSugerencia(s)" [disabled]="guardando">
+            <i class="bi bi-check2"></i> Aplicar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bloque" *ngIf="!loading && sugerencias.length === 0">
+      <div class="empty-hint">
+        No hay sugerencias automáticas para este movimiento. Selecciona una factura manualmente.
+      </div>
+    </div>
+
+    <!-- Modo manual -->
+    <div class="bloque">
+      <div class="bloque-title">
+        <button type="button" class="btn-toggle" (click)="modoManual = !modoManual">
+          <i class="bi" [ngClass]="modoManual ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+          Aplicación manual
+        </button>
+      </div>
+
+      <div *ngIf="modoManual">
+        <input
+          type="text"
+          class="form-control-soft"
+          placeholder="Buscar factura por folio o receptor…"
+          [(ngModel)]="busquedaFactura"
+        />
+
+        <div class="lista-facturas" *ngIf="!facturaManual">
+          <div class="factura-item" *ngFor="let f of facturasFiltradas" (click)="seleccionarFactura(f)">
+            <span class="folio">N° {{ f.folio }}</span>
+            <span class="receptor">{{ f.razon_social_receptor }}</span>
+            <span class="saldo">$ {{ (f.saldo_pendiente ?? 0) | number:'1.0-0' }}</span>
+          </div>
+          <div class="empty-hint" *ngIf="facturasFiltradas.length === 0">
+            No hay facturas pendientes.
+          </div>
+        </div>
+
+        <div class="factura-seleccionada" *ngIf="facturaManual">
+          <div>
+            <strong>Factura N° {{ facturaManual.folio }}</strong>
+            <span class="receptor">{{ facturaManual.razon_social_receptor }}</span>
+          </div>
+          <div class="saldo">
+            Saldo pendiente: $ {{ (facturaManual.saldo_pendiente ?? 0) | number:'1.0-0' }}
+          </div>
+          <div class="monto-input">
+            <label>Monto a aplicar</label>
+            <input type="number" class="form-control-soft" [(ngModel)]="montoManual" min="1" />
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" (click)="confirmarManual()" [disabled]="guardando">
+            <i class="bi bi-check2"></i> Confirmar aplicación
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="facturaManual = null">
+            Cambiar factura
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+  </div>
+
+  <div class="aplicar-footer">
+    <button type="button" class="btn btn-ghost btn-sm" (click)="cancelar()" [disabled]="guardando">
+      Cerrar
+    </button>
+  </div>
+</div>

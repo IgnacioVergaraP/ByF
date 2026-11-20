@@ -1,0 +1,97 @@
+<div class="tabla-container">
+  <div class="toolbar">
+    <input
+      type="text"
+      class="form-control-soft"
+      placeholder="Buscar…"
+      [(ngModel)]="busqueda"
+      (ngModelChange)="recalcular()"
+    />
+    <select class="form-control-soft" [(ngModel)]="filtroEstado" (ngModelChange)="recalcular()">
+      <option value="todas">Todas</option>
+      <option value="con-depositante">Con depositante</option>
+      <option value="sin-depositante">Sin depositante</option>
+    </select>
+    <span class="count">{{ filasVisibles.length }} filas</span>
+  </div>
+
+  <div class="tabla-wrapper">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th (click)="ordenarPor('arrendatario')">
+            Arrendatario <i class="bi" [ngClass]="iconoOrden('arrendatario')"></i>
+          </th>
+          <th (click)="ordenarPor('propiedad')">
+            Propiedad <i class="bi" [ngClass]="iconoOrden('propiedad')"></i>
+          </th>
+          <th (click)="ordenarPor('cc')">
+            CC <i class="bi" [ngClass]="iconoOrden('cc')"></i>
+          </th>
+          <th (click)="ordenarPor('depositante')">
+            Depositante <i class="bi" [ngClass]="iconoOrden('depositante')"></i>
+          </th>
+          <th class="acciones"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let f of filasVisibles" [class.sin-dep]="!f.depositante_id">
+          <td>{{ f.arrendatario_nombre }}</td>
+          <td>{{ f.propiedad_nombre }}</td>
+          <td><span class="badge-cc" *ngIf="f.cc">{{ f.cc }}</span></td>
+          <td>
+            <span *ngIf="f.depositante_id" class="dep-tag">{{ f.depositante_nombre }}</span>
+            <span *ngIf="!f.depositante_id" class="sin-dep-tag">(sin depositante)</span>
+          </td>
+          <td class="acciones">
+            <button
+              type="button"
+              class="btn-icon"
+              *ngIf="!f.depositante_id"
+              (click)="abrirAgregar(f)"
+              title="Agregar depositante"
+            >
+              <i class="bi bi-plus-lg"></i>
+            </button>
+<button
+  type="button"
+  class="btn-icon danger"
+  *ngIf="f.arista_id"
+  (click)="eliminarFila(f)"
+  title="Eliminar asociación"
+>
+  <i class="bi bi-x-lg"></i>
+</button>
+          </td>
+        </tr>
+        <tr *ngIf="filasVisibles.length === 0">
+          <td colspan="5" class="vacio">No hay filas que coincidan.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Dropdown de agregar depositante -->
+  <div class="modal-backdrop" *ngIf="agregarPara" (click)="cerrarAgregar()"></div>
+  <div class="dropdown-flotante" *ngIf="agregarPara">
+    <div class="dropdown-header">
+      <span>Agregar depositante a <strong>{{ agregarPara.arrendatario_nombre }}</strong></span>
+      <button type="button" class="btn-icon" (click)="cerrarAgregar()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <input
+      type="text"
+      class="form-control-soft"
+      placeholder="Buscar…"
+      [(ngModel)]="busquedaDep"
+      autofocus
+    />
+    <ul class="dropdown-list">
+      <li *ngFor="let d of deposPara(agregarPara)">
+        <button type="button" (click)="elegir(d)">{{ d.nombre_original }}</button>
+      </li>
+      <li *ngIf="deposPara(agregarPara).length === 0" class="vacio">
+        No hay depositantes disponibles.
+      </li>
+    </ul>
+  </div>
+</div>

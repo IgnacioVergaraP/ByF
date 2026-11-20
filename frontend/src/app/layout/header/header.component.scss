@@ -1,0 +1,32 @@
+@use '../../../styles/variables' as *;
+
+.app-header {
+  height: $header-height;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 $space-xl;
+  border-bottom: 1px solid $color-border;
+  background-color: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.app-header-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: $color-text;
+}
+
+.app-header-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-xs;
+  font-size: 12px;
+  color: $color-text-muted;
+
+  i {
+    font-size: 12px;
+  }
+}

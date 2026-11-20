@@ -1,0 +1,270 @@
+<div class="gastos-page">
+  <header class="gastos-header">
+    <div>
+      <h1>Conciliación de gastos</h1>
+      <p>Carga el Excel de gastos y concilia sus montos exactos con los cargos de la cartola.</p>
+    </div>
+  </header>
+
+  <div class="alert alert-success" *ngIf="mensaje">{{ mensaje }}</div>
+  <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+
+  <section class="tabs card-soft">
+    <div class="tabs-header">
+      <button type="button" class="tab-item" [class.active]="tabActiva === 'cartola'" (click)="seleccionarTab('cartola')">
+        <i class="bi bi-bank"></i> Registros de cartola <span class="tab-count">{{ egresos.length }}</span>
+      </button>
+      <button type="button" class="tab-item" [class.active]="tabActiva === 'documentos'" (click)="seleccionarTab('documentos')">
+        <i class="bi bi-file-earmark-text"></i> Gastos del Excel <span class="tab-count">{{ documentos.length }}</span>
+      </button>
+    </div>
+
+    <div class="tab-content" *ngIf="tabActiva === 'cartola'">
+      <article class="upload-card">
+        <div class="upload-icon"><i class="bi bi-bank"></i></div>
+        <div class="upload-content">
+          <h2>Cargar cartola bancaria</h2>
+          <p>Los cargos se muestran aquí, separados de los abonos de Ingresos.</p>
+          <label class="form-label" for="centro-gastos">Entidad / centro de costo</label>
+          <select id="centro-gastos" class="form-control-soft" [(ngModel)]="centroCostoId" (ngModelChange)="centroCostoCambio()">
+            <option value="">Todas las entidades</option>
+            <option *ngFor="let centro of centros" [value]="centro.id">{{ centro.codigo }}</option>
+          </select>
+          <div class="upload-actions">
+            <input #cartolaInput type="file" hidden accept=".pdf" (change)="onCartolaSeleccionada($event)" />
+            <button type="button" class="btn btn-ghost btn-sm" (click)="cartolaInput.click()" [disabled]="procesando || !centroCostoId">
+              <i class="bi bi-upload"></i> Seleccionar cartola
+            </button>
+            <span class="file-name" *ngIf="cartola">{{ cartola.name }}</span>
+            <button type="button" class="btn btn-primary btn-sm" (click)="importarCartola()" [disabled]="!cartola || !centroCostoId || procesando">
+              {{ procesando ? 'Procesando…' : 'Procesar cartola' }}
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <div class="archivos-cargados" *ngIf="cartolasCargadas.length">
+        <h2>Cartolas cargadas</h2>
+        <div class="archivo-cargado" *ngFor="let archivo of cartolasCargadas">
+          <div><strong>{{ archivo.archivo_nombre }}</strong><small>{{ centroCodigo(archivo.centro_costo_id) }} · {{ archivo.cantidad }} cargos</small></div>
+          <button type="button" class="btn btn-danger btn-sm" (click)="solicitarEliminarArchivo('cartolas', archivo)" [disabled]="procesando" [attr.aria-label]="'Borrar cartola ' + archivo.archivo_nombre"><i class="bi bi-trash" aria-hidden="true"></i> Borrar cartola</button>
+        </div>
+      </div>
+
+      <div class="table-heading">
+        <div><h2>Cargos / egresos</h2><p>Clasificación y conciliación son procesos independientes.</p></div>
+        <div class="filters">
+          <label><span>Período</span><input class="form-control-soft" type="month" [(ngModel)]="periodo" (ngModelChange)="aplicarFiltros()" /></label>
+          <label><span>Conciliación</span>
+            <select class="form-control-soft" [(ngModel)]="filtroEstado" (ngModelChange)="aplicarFiltros()">
+              <option value="todos">Todos</option><option value="conciliado">Conciliado</option><option value="sugerido">Pendiente de aprobación</option><option value="sin_documento">Sin gasto del Excel asociado</option>
+            </select>
+          </label>
+          <label><span>Tipo</span>
+            <select class="form-control-soft" [(ngModel)]="filtroTipo" (ngModelChange)="aplicarFiltros()">
+              <option value="todos">Todos</option><option value="sin_clasificar">Sin clasificar</option><option value="fijo">Fijo</option><option value="variable">Variable</option>
+            </select>
+          </label>
+          <label><span>Categoría</span>
+            <select class="form-control-soft" [(ngModel)]="filtroCategoria" (ngModelChange)="filtroSubcategoria = ''; aplicarFiltros()">
+              <option value="">Todas</option><option *ngFor="let categoria of (catalogo.categorias | keyvalue)" [value]="categoria.key">{{ categoria.key }}</option>
+            </select>
+          </label>
+          <label><span>Subcategoría</span>
+            <select class="form-control-soft" [(ngModel)]="filtroSubcategoria" (ngModelChange)="aplicarFiltros()">
+              <option value="">Todas</option><option *ngFor="let subcategoria of (catalogo.categorias[filtroCategoria] || [])" [value]="subcategoria">{{ subcategoria }}</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="cargando"><i class="bi bi-arrow-repeat spin"></i> Cargando registros de cartola…</div>
+      <div class="empty-state" *ngIf="!cargando && egresosFiltrados.length === 0">
+        <i class="bi bi-inbox"></i><p class="empty-title">No hay cargos para mostrar</p>
+        <p class="empty-desc">Carga la cartola. Si ya fue importada antes, vuelve a seleccionarla para recuperar sus cargos.</p>
+      </div>
+
+      <div class="table-scroll" *ngIf="!cargando && egresosFiltrados.length">
+        <table class="table-soft">
+          <thead><tr>
+            <th>Fecha</th><th>Descripción</th><th>Empresa</th><th class="amount-cell">Monto</th>
+            <th>Conciliación</th><th>Gasto del Excel asociado</th><th>Categoría</th><th>Subcategoría</th><th>Acciones</th>
+          </tr></thead>
+          <tbody><tr *ngFor="let gasto of egresosFiltrados">
+            <td class="date-cell">{{ gasto.fecha }}</td>
+            <td class="description-cell">{{ gasto.descripcion_original }}</td>
+            <td>{{ centroCodigo(gasto.centro_costo_id) }}</td>
+            <td class="amount-cell">$ {{ gasto.monto | number:'1.0-0' }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="gasto.estado_conciliacion">
+                {{ gasto.estado_conciliacion === 'conciliado' ? 'Conciliado' : gasto.estado_conciliacion === 'sugerido' ? 'Pendiente de aprobación' : 'Sin gasto del Excel' }}
+              </span>
+            </td>
+            <td class="associated-documents">
+              <ng-container *ngIf="gasto.documentos.length; else noDocumento">
+                <div *ngFor="let doc of gasto.documentos">
+                  <button type="button" class="document-link" (click)="descargarDocumentoPorId(doc.id)">{{ doc.destinatario || doc.archivo_nombre }}</button><small *ngIf="doc.fila">{{ doc.hoja }} · fila {{ doc.fila }}</small>
+                  <small *ngIf="doc.estado_asociacion === 'sugerida'">Pendiente de aprobación</small>
+                </div>
+              </ng-container>
+              <ng-template #noDocumento><span class="muted">—</span></ng-template>
+            </td>
+            <td class="classification-cell">
+              <ng-container *ngIf="gasto.tipo_gasto; else sinClasificar">
+                <strong *ngIf="gasto.tipo_gasto === 'variable'">Variable</strong>
+                <span *ngIf="gasto.tipo_gasto === 'fijo'">{{ gasto.categoria }}</span>
+                <small *ngIf="gasto.clasificacion_origen === 'automatica'">{{ clasificacionOrigen(gasto) }}</small>
+              </ng-container>
+              <ng-template #sinClasificar>
+                <span class="muted">Sin clasificar</span>
+                <small class="suggestion-note" *ngIf="gasto.sugerencia">Sugerido: {{ gasto.sugerencia.tipo_gasto }} · {{ gasto.sugerencia.categoria || 'sin categoría' }}</small>
+              </ng-template>
+            </td>
+            <td class="classification-cell">
+              <span *ngIf="gasto.tipo_gasto === 'fijo'">{{ gasto.subcategoria }}</span>
+              <span *ngIf="gasto.tipo_gasto !== 'fijo'" class="muted">—</span>
+            </td>
+            <td class="actions-cell">
+              <button type="button" class="btn btn-ghost btn-sm action-icon" (click)="abrirConciliacion(gasto)" [title]="gasto.estado_conciliacion === 'sugerido' ? 'Revisar sugerencia' : 'Seleccionar gasto del Excel'" [attr.aria-label]="gasto.estado_conciliacion === 'sugerido' ? 'Revisar sugerencia' : 'Seleccionar gasto del Excel'">
+                <i class="bi" [ngClass]="gasto.estado_conciliacion === 'sugerido' ? 'bi-link-45deg' : 'bi-file-earmark-plus'" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm action-icon" (click)="abrirClasificacion(gasto)" [title]="gasto.tipo_gasto ? 'Editar clasificación' : 'Clasificar gasto'" [attr.aria-label]="gasto.tipo_gasto ? 'Editar clasificación' : 'Clasificar gasto'">
+                <i class="bi" [ngClass]="gasto.tipo_gasto ? 'bi-pencil' : 'bi-tags'" aria-hidden="true"></i>
+              </button>
+            </td>
+          </tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-content" *ngIf="tabActiva === 'documentos'">
+      <article class="upload-card">
+        <div class="upload-icon"><i class="bi bi-file-earmark-text"></i></div>
+        <div class="upload-content">
+          <h2>Cargar Excel de gastos</h2>
+          <p>Selecciona el Excel (.xlsx) con FECHA, DESTINATARIO y MONTO; también se leerá OBSERVACION. El cruce usa la misma entidad y fechas con hasta 45 días de diferencia. Los montos únicos se concilian automáticamente. Los montos repetidos se comparan por nombre y quedan pendientes de aprobación.</p>
+          <label class="form-label" for="centro-documentos">Entidad / centro de costo</label>
+          <select id="centro-documentos" class="form-control-soft" [(ngModel)]="centroCostoId" (ngModelChange)="centroCostoCambio()">
+            <option value="">Todas las entidades</option><option *ngFor="let centro of centros" [value]="centro.id">{{ centro.codigo }}</option>
+          </select>
+          <div class="upload-actions">
+            <input #documentoInput type="file" hidden accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" (change)="onDocumentoSeleccionado($event)" />
+            <button type="button" class="btn btn-ghost btn-sm" (click)="documentoInput.click()" [disabled]="procesando || !centroCostoId"><i class="bi bi-upload"></i> Seleccionar Excel</button>
+            <span class="file-name" *ngIf="documento">{{ documento.name }}</span>
+            <button type="button" class="btn btn-primary btn-sm" (click)="subirDocumento()" [disabled]="!documento || !centroCostoId || procesando">{{ procesando ? 'Procesando…' : 'Importar gastos' }}</button>
+          </div>
+        </div>
+      </article>
+      <div class="archivos-cargados" *ngIf="excelsCargados.length">
+        <h2>Excel cargados</h2>
+        <div class="archivo-cargado" *ngFor="let archivo of excelsCargados">
+          <div><strong>{{ archivo.archivo_nombre }}</strong><small>{{ centroCodigo(archivo.centro_costo_id) }} · {{ archivo.cantidad }} gastos</small></div>
+          <button type="button" class="btn btn-danger btn-sm" (click)="solicitarEliminarArchivo('excels', archivo)" [disabled]="procesando" [attr.aria-label]="'Borrar Excel ' + archivo.archivo_nombre"><i class="bi bi-trash" aria-hidden="true"></i> Borrar Excel</button>
+        </div>
+      </div>
+      <div class="table-heading"><div><h2>Gastos importados</h2><p>Cada fila corresponde a un gasto. Revisa y aprueba las coincidencias propuestas por nombre.</p></div></div>
+      <div class="empty-state" *ngIf="documentos.length === 0"><i class="bi bi-file-earmark-text"></i><p class="empty-title">Aún no hay gastos del Excel</p></div>
+      <div class="table-scroll" *ngIf="documentos.length">
+        <table class="table-soft">
+          <thead><tr><th>Excel / fila</th><th>Destinatario</th><th>Observación</th><th>Fecha</th><th>Total</th><th>Estado</th><th>Egreso asociado</th><th>Acciones</th></tr></thead>
+          <tbody><tr *ngFor="let documento of documentos">
+            <td><button type="button" class="document-link" (click)="descargarDocumento(documento)">{{ documento.archivo_nombre }}</button><small *ngIf="documento.fila">{{ documento.hoja }} · fila {{ documento.fila }}</small></td>
+            <td>{{ documento.destinatario || '—' }}</td>
+            <td>{{ documento.observacion || '—' }}</td>
+            <td>{{ documento.fecha_documento || '—' }}</td>
+            <td>{{ documento.monto === null ? '—' : ('$ ' + (documento.monto | number:'1.0-0')) }}</td>
+            <td><span class="status-badge" [ngClass]="documento.estado === 'pagado' ? 'conciliado' : documento.asociaciones.length ? 'sugerido' : 'sin_documento'">{{ estadoRegistro(documento) }}</span></td>
+            <td><span *ngFor="let asociacion of documento.asociaciones">{{ egresoResumen(asociacion.egreso_id) }}<br /></span><span *ngIf="!documento.asociaciones.length" class="muted">—</span></td>
+            <td class="actions-cell">
+              <button type="button" class="btn btn-ghost btn-sm action-icon" (click)="abrirConciliacionDesdeDocumento(documento)" [title]="documento.asociaciones.length ? 'Revisar o revertir conciliación' : 'Seleccionar egreso'" [attr.aria-label]="documento.asociaciones.length ? 'Revisar o revertir conciliación' : 'Seleccionar egreso'">
+                <i class="bi" [ngClass]="documento.asociaciones.length ? 'bi-link-45deg' : 'bi-bank'" aria-hidden="true"></i>
+              </button>
+            </td>
+          </tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div class="modal-backdrop" *ngIf="archivoEliminar as seleccion" (click)="cancelarEliminarArchivo()">
+    <section class="gasto-modal" role="dialog" aria-modal="true" aria-labelledby="eliminar-archivo-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2 id="eliminar-archivo-title">{{ seleccion.tipo === 'cartolas' ? 'Borrar cartola de Gastos' : 'Borrar Excel de gastos' }}</h2>
+        <button type="button" class="icon-close" (click)="cancelarEliminarArchivo()" [disabled]="procesando" aria-label="Cerrar">×</button>
+      </header>
+      <div class="modal-body">
+        <strong>{{ seleccion.archivo.archivo_nombre }}</strong>
+        <p>Entidad: {{ centroCodigo(seleccion.archivo.centro_costo_id) }}</p>
+        <p *ngIf="seleccion.tipo === 'cartolas'">Se eliminarán sus {{ seleccion.archivo.cantidad }} cargos y las conciliaciones asociadas en Gastos. Los abonos y conciliaciones de Ingresos se conservarán.</p>
+        <p *ngIf="seleccion.tipo === 'excels'">Se eliminarán el archivo, sus {{ seleccion.archivo.cantidad }} filas y sus conciliaciones. Los cargos de cartola quedarán disponibles para conciliar nuevamente.</p>
+        <p>Esta acción no se puede deshacer. Podrás volver a cargar el archivo original.</p>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-ghost btn-sm" (click)="cancelarEliminarArchivo()" [disabled]="procesando">Cancelar</button>
+        <button type="button" class="btn btn-danger btn-sm" (click)="confirmarEliminarArchivo()" [disabled]="procesando">{{ procesando ? 'Borrando…' : 'Confirmar borrado' }}</button>
+      </footer>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="gastoConciliar || documentoConciliar" (click)="cerrarConciliacion()">
+    <section class="gasto-modal" role="dialog" aria-modal="true" aria-labelledby="conciliacion-title" (click)="$event.stopPropagation()">
+      <header class="modal-header"><div><h2 id="conciliacion-title">Conciliar gasto del Excel</h2><p>Revisa el destinatario, el monto exacto y el egreso correspondiente.</p></div><button type="button" class="icon-close" (click)="cerrarConciliacion()" aria-label="Cerrar">×</button></header>
+      <div class="modal-body">
+        <div class="modal-summary" *ngIf="gastoConciliar as gasto">
+          <strong>Egreso</strong><span>{{ gasto.fecha }} · {{ gasto.descripcion_original }}</span><b>$ {{ gasto.monto | number:'1.0-0' }}</b>
+        </div>
+        <p class="modal-hint" *ngIf="gastoConciliar?.estado_conciliacion === 'sugerido'">Se preseleccionó una coincidencia sugerida. Revísala antes de confirmar.</p>
+        <label *ngIf="!gastoConciliar"><span>Egreso de cartola</span>
+          <select class="form-control-soft" [(ngModel)]="egresoSeleccionadoId">
+            <option value="">Selecciona un egreso…</option><option *ngFor="let egreso of egresosDisponibles(documentoConciliar!)" [value]="egreso.id">{{ egreso.fecha }} · {{ egreso.descripcion_original }} · ${{ egreso.monto }}</option>
+          </select>
+        </label>
+        <label *ngIf="!documentoConciliar"><span>Gasto del Excel</span>
+          <select class="form-control-soft" [(ngModel)]="documentoSeleccionadoId">
+            <option value="">Selecciona un gasto…</option><option *ngFor="let doc of documentosDisponibles(gastoConciliar!)" [value]="doc.id">{{ doc.destinatario || doc.archivo_nombre }} · {{ doc.hoja }} / fila {{ doc.fila }} · {{ doc.fecha_documento || 'sin fecha' }} · {{ doc.monto === null ? 'sin total' : ('$' + doc.monto) }}</option>
+          </select>
+        </label>
+        <div class="modal-summary" *ngIf="documentoConciliar as doc"><strong>Gasto del Excel</strong><span>{{ doc.destinatario || doc.archivo_nombre }} · {{ doc.hoja }} / fila {{ doc.fila }} · {{ doc.fecha_documento || 'sin fecha' }}</span><span *ngIf="doc.observacion">{{ doc.observacion }}</span><b>{{ doc.monto === null ? 'Total no detectado' : ('$ ' + (doc.monto | number:'1.0-0')) }}</b></div>
+        <p class="modal-hint">La conciliación quedará confirmada al guardar esta relación.</p>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-danger btn-sm" *ngIf="asociacionSeleccionadaId()" (click)="revertirConciliacion()">Revertir asociación</button>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="cerrarConciliacion()">Cancelar</button>
+        <button type="button" class="btn btn-primary btn-sm" (click)="confirmarConciliacion()" [disabled]="!egresoSeleccionadoId || !documentoSeleccionadoId">Confirmar conciliación</button>
+      </footer>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="gastoClasificar" (click)="cerrarClasificacion()">
+    <section class="gasto-modal" role="dialog" aria-modal="true" aria-labelledby="clasificacion-title" (click)="$event.stopPropagation()">
+      <header class="modal-header"><div><h2 id="clasificacion-title">Clasificar gasto</h2><p>{{ gastoClasificar.descripcion_original }}</p></div><button type="button" class="icon-close" (click)="cerrarClasificacion()" aria-label="Cerrar">×</button></header>
+      <div class="modal-body">
+        <div class="suggestion-note" *ngIf="gastoClasificar.sugerencia && !gastoClasificar.tipo_gasto">
+          Coincidencia sugerida: {{ gastoClasificar.sugerencia.tipo_gasto }} · {{ gastoClasificar.sugerencia.categoria || 'sin categoría' }}
+          <span *ngIf="gastoClasificar.sugerencia.regla">Regla: {{ gastoClasificar.sugerencia.regla.valor }}</span>
+        </div>
+        <label><span>Tipo de gasto</span>
+          <select class="form-control-soft" [(ngModel)]="tipoEdicion" (ngModelChange)="tipoCambio()">
+            <option value="">Selecciona…</option><option value="fijo">Fijo / recurrente</option><option value="variable">Variable / ocasional</option>
+          </select>
+        </label>
+        <label *ngIf="tipoEdicion === 'fijo'"><span>Categoría</span>
+          <select class="form-control-soft" [(ngModel)]="categoriaEdicion" (ngModelChange)="categoriaCambio()">
+            <option value="">Selecciona categoría…</option><option *ngFor="let categoria of (catalogo.categorias | keyvalue)" [value]="categoria.key">{{ categoria.key }}</option>
+          </select>
+        </label>
+        <label *ngIf="tipoEdicion === 'fijo'"><span>Subcategoría</span>
+          <select class="form-control-soft" [(ngModel)]="subcategoriaEdicion">
+            <option value="">Selecciona subcategoría…</option><option *ngFor="let subcategoria of subcategorias()" [value]="subcategoria">{{ subcategoria }}</option>
+          </select>
+        </label>
+        <label class="remember-rule" *ngIf="tipoEdicion"><input type="checkbox" [(ngModel)]="recordarRegla" /><span>Guardar o actualizar regla para esta entidad</span></label>
+      </div>
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-danger btn-sm" *ngIf="gastoClasificar.tipo_gasto" (click)="revertirClasificacion()">Revertir clasificación</button>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="cerrarClasificacion()">Cancelar</button>
+        <button type="button" class="btn btn-primary btn-sm" (click)="guardarClasificacion()" [disabled]="!tipoEdicion || (tipoEdicion === 'fijo' && (!categoriaEdicion || !subcategoriaEdicion))">Guardar clasificación</button>
+      </footer>
+    </section>
+  </div>
+</div>

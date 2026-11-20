@@ -1,0 +1,146 @@
+<div class="facturas">
+  <div class="facturas-upload">
+    <input type="file" hidden #fileInput accept=".pdf" multiple (change)="onFilesSelected($event)" />
+    <button type="button" class="btn btn-ghost btn-sm" (click)="abrirSelector()" [disabled]="procesando">
+      <i class="bi bi-upload"></i> Seleccionar PDFs
+    </button>
+    <span class="hint" *ngIf="archivos.length === 0">Puedes seleccionar varios archivos a la vez.</span>
+    <span class="hint" *ngIf="archivos.length > 0">{{ archivos.length }} archivo(s) seleccionado(s).</span>
+    <button type="button" class="btn btn-primary btn-sm" *ngIf="archivos.length > 0" (click)="importar()" [disabled]="procesando">
+      {{ procesando ? 'Procesando…' : 'Procesar lote' }}
+    </button>
+    <button type="button" class="btn btn-ghost btn-sm" *ngIf="archivos.length > 0" (click)="limpiarSeleccion()" [disabled]="procesando">Limpiar</button>
+  </div>
+
+  <div class="lista-archivos" *ngIf="archivos.length > 0">
+    <div class="archivo-item" *ngFor="let a of archivos; let i = index">
+      <i class="bi bi-file-earmark-pdf"></i>
+      <span>{{ a.name }}</span>
+      <button type="button" class="btn-icon" (click)="quitarArchivo(i)" [disabled]="procesando">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="progress-bar-wrapper" *ngIf="procesando">
+    <div class="progress-bar-fill" [style.width.%]="progreso"></div>
+  </div>
+
+  <div class="alert alert-success" *ngIf="mensaje">{{ mensaje }}</div>
+  <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <div class="toolbar">
+    <input type="text" class="form-control-soft" placeholder="Buscar por folio, razón social o RUT…"
+           [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltro()" />
+    <span class="count">{{ facturasFiltradas.length }} facturas</span>
+  </div>
+
+  <div *ngIf="cargando" class="empty-state">
+    <i class="bi bi-arrow-repeat spin"></i> Cargando facturas…
+  </div>
+
+  <div *ngIf="!cargando && facturasFiltradas.length === 0" class="empty-state">
+    <i class="bi bi-inbox"></i>
+    <p>Aún no hay facturas importadas.</p>
+  </div>
+
+  <table class="tabla-facturas" *ngIf="!cargando && facturasFiltradas.length > 0">
+    <thead>
+      <tr>
+        <th>Folio</th>
+        <th>Receptor</th>
+        <th>RUT</th>
+        <th>Total</th>
+        <th>Pagado</th>
+        <th>Saldo</th>
+        <th>Estado pago</th>
+        <th>Asociación</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let f of facturasFiltradas">
+        <td>{{ f.folio }}</td>
+        <td>{{ f.razon_social_receptor || '—' }}</td>
+        <td>{{ f.rut_receptor || '—' }}</td>
+        <td class="monto">$ {{ f.total | number:'1.0-0' }}</td>
+        <td class="monto">$ {{ f.total_pagado | number:'1.0-0' }}</td>
+        <td class="monto">$ {{ f.saldo_pendiente | number:'1.0-0' }}</td>
+        <td>
+          <span class="badge-estado" [ngClass]="estadoPagoClass(f.estado_pago)">{{ f.estado_pago }}</span>
+        </td>
+        <td>
+          <span class="badge-estado" [ngClass]="estadoAsociacionClass(f.estado_asociacion)">
+            {{ asociacionResumen(f) }}
+          </span>
+        </td>
+        <td class="acciones">
+          <button type="button" class="btn btn-ghost btn-sm" (click)="verDetalle(f)">
+            <i class="bi bi-eye"></i>
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="abrirAsociar(f)">
+            <i class="bi bi-link-45deg"></i>
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="abrirAplicaciones(f)" title="Ver aplicaciones">
+            <i class="bi bi-cash-stack"></i>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Modal detalle -->
+  <div class="modal-backdrop" *ngIf="facturaDetalle" (click)="cerrarDetalle()"></div>
+  <div class="modal-detalle" *ngIf="facturaDetalle">
+    <div class="modal-header">
+      <h3>Factura N° {{ facturaDetalle.folio }}</h3>
+      <button type="button" class="btn-icon" (click)="cerrarDetalle()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="campo"><label>Emisor</label><span>{{ facturaDetalle.razon_social_emisor }}</span></div>
+      <div class="campo"><label>Receptor</label><span>{{ facturaDetalle.razon_social_receptor }}</span></div>
+      <div class="campo"><label>RUT receptor</label><span>{{ facturaDetalle.rut_receptor }}</span></div>
+      <div class="campo"><label>Emisión</label><span>{{ facturaDetalle.fecha_emision }}</span></div>
+      <div class="campo"><label>Neto</label><span>$ {{ facturaDetalle.neto | number:'1.0-0' }}</span></div>
+      <div class="campo"><label>IVA</label><span>$ {{ facturaDetalle.iva | number:'1.0-0' }}</span></div>
+      <div class="campo"><label>Total</label><span class="total">$ {{ facturaDetalle.total | number:'1.0-0' }}</span></div>
+      <div class="campo"><label>Pagado</label><span>$ {{ facturaDetalle.total_pagado | number:'1.0-0' }}</span></div>
+      <div class="campo"><label>Saldo</label><span>$ {{ facturaDetalle.saldo_pendiente | number:'1.0-0' }}</span></div>
+      <h4>Líneas</h4>
+      <table class="tabla-lineas" *ngIf="facturaDetalle.detalles && facturaDetalle.detalles.length > 0">
+        <thead><tr><th>Código</th><th>Descripción</th><th>Cant.</th><th>P. Unit.</th><th>Total</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let d of facturaDetalle.detalles">
+            <td>{{ d.codigo }}</td>
+            <td>{{ d.descripcion }}</td>
+            <td>{{ d.cantidad }}</td>
+            <td>$ {{ d.precio_unitario | number:'1.0-2' }}</td>
+            <td>$ {{ d.total_linea | number:'1.0-0' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Panel asociar -->
+  <div class="modal-backdrop" *ngIf="facturaAsociar" (click)="cerrarAsociar()"></div>
+  <div class="offcanvas-panel" [class.open]="!!facturaAsociar">
+    <app-asociar-factura
+      *ngIf="facturaAsociar"
+      [factura]="facturaAsociar"
+      (cerrar)="cerrarAsociar()"
+      (guardado)="onAsociacionGuardada()"
+    ></app-asociar-factura>
+  </div>
+
+  <!-- Panel aplicaciones -->
+  <div class="modal-backdrop" *ngIf="facturaAplicaciones" (click)="cerrarAplicaciones()"></div>
+  <div class="offcanvas-panel" [class.open]="!!facturaAplicaciones">
+    <app-factura-aplicaciones
+      *ngIf="facturaAplicaciones"
+      [factura]="facturaAplicaciones"
+      (cerrar)="cerrarAplicaciones()"
+      (cambio)="onAplicacionesCambio()"
+    ></app-factura-aplicaciones>
+  </div>
+</div>

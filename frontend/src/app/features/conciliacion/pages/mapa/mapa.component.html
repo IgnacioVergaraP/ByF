@@ -1,0 +1,70 @@
+<div class="mapa-page">
+  <div class="mapa-header">
+    <div>
+      <h1>Mapa de asociaciones</h1>
+      <p class="mapa-subtitle">
+        Arrendatarios, sus propiedades y los depositantes que pagan por ellos.
+      </p>
+    </div>
+    <div class="mapa-header-actions">
+      <div class="vista-toggle">
+        <a
+          class="toggle-item"
+          routerLink="/conciliacion/ingresos"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <i class="bi bi-list-ul"></i> Panel
+        </a>
+        <a
+          class="toggle-item"
+          routerLink="/conciliacion/ingresos/mapa"
+          routerLinkActive="active"
+        >
+          <i class="bi bi-diagram-3"></i> Mapa
+        </a>
+      </div>
+
+      <div class="modo-toggle">
+        <button
+          type="button"
+          class="modo-item"
+          [class.active]="vista === 'tarjetas'"
+          (click)="cambiarVista('tarjetas')"
+        >
+          <i class="bi bi-grid"></i> Tarjetas
+        </button>
+        <button
+          type="button"
+          class="modo-item"
+          [class.active]="vista === 'tabla'"
+          (click)="cambiarVista('tabla')"
+        >
+          <i class="bi bi-table"></i> Tabla
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <div *ngIf="loading" class="empty-state">
+    <i class="bi bi-arrow-repeat spin"></i> Cargando…
+  </div>
+
+  <app-mapa-tarjetas
+    *ngIf="!loading && grafo && vista === 'tarjetas'"
+    [tarjetas]="tarjetas"
+    [depositantesDisponibles]="depositantesDisponibles"
+    (crear)="onCrear($event)"
+    (eliminar)="onEliminar($event)"
+  ></app-mapa-tarjetas>
+
+  <app-mapa-tabla
+    *ngIf="!loading && grafo && vista === 'tabla'"
+    [filas]="filasTabla"
+    [depositantesDisponibles]="depositantesDisponibles"
+    (crear)="onCrear($event)"
+    (eliminar)="onEliminar($event)"
+  ></app-mapa-tabla>
+</div>

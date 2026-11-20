@@ -1,0 +1,101 @@
+<div class="admin-props">
+  <div class="admin-props-header">
+    <div>
+      <h2>Maestro de propiedades</h2>
+      <p class="admin-props-subtitle">
+        Importa el Excel maestro y consulta las propiedades asociadas a cada arrendatario.
+      </p>
+    </div>
+    <div>
+      <input
+        type="file"
+        accept=".xlsx,.xlsm"
+        hidden
+        #fileInput
+        (change)="onFileSelected($event)"
+      />
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        [disabled]="importing"
+        (click)="fileInput.click()"
+      >
+        <i class="bi bi-upload"></i>
+        {{ importing ? 'Importando…' : 'Importar Excel maestro' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="alert alert-info" *ngIf="importing">
+    Subiendo archivo… {{ importProgress }}%
+    <div class="progress-bar-wrapper">
+      <div class="progress-bar-fill" [style.width.%]="importProgress"></div>
+    </div>
+  </div>
+
+  <div class="alert alert-success" *ngIf="importMessage">{{ importMessage }}</div>
+  <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <div class="admin-props-filters">
+    <div class="filter-group">
+      <label>Filtrar por CC</label>
+      <select class="form-control-soft" [formControl]="filtroCC">
+        <option value="">Todos</option>
+        <option *ngFor="let c of centros" [value]="c.codigo">{{ c.codigo }}</option>
+      </select>
+    </div>
+    <div class="filter-group grow">
+      <label>Buscar</label>
+      <input
+        type="text"
+        class="form-control-soft"
+        placeholder="Propiedad o arrendatario…"
+        [formControl]="busqueda"
+      />
+    </div>
+    <div class="filter-group">
+      <label>&nbsp;</label>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="clearFilters()">
+        <i class="bi bi-x-circle"></i> Limpiar
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <div *ngIf="loading" class="empty-state">
+      <i class="bi bi-arrow-repeat spin"></i> Cargando propiedades…
+    </div>
+
+    <div *ngIf="!loading && filteredPropiedades.length === 0" class="empty-state">
+      No hay propiedades para mostrar.
+      <span *ngIf="propiedades.length === 0">
+        Importa el Excel maestro para comenzar.
+      </span>
+    </div>
+
+    <table class="table-soft" *ngIf="!loading && filteredPropiedades.length > 0">
+      <thead>
+        <tr>
+          <th>CC</th>
+          <th>Propiedad</th>
+          <th>Arrendatarios</th>
+          <th>Conceptos</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of filteredPropiedades; trackBy: trackById">
+          <td><span class="badge-cc">{{ p.centro_costo?.codigo }}</span></td>
+          <td class="cell-strong">{{ p.nombre_original }}</td>
+          <td>
+            <span class="tag" *ngFor="let a of p.arrendatarios">
+              {{ a.nombre_original }}
+            </span>
+          </td>
+          <td>
+            <span class="tag tag-soft" *ngFor="let c of p.conceptos">{{ c }}</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

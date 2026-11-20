@@ -1,0 +1,224 @@
+@use '../../../../../styles/variables' as *;
+
+.factura-aplicaciones { display: flex; flex-direction: column; height: 100%; }
+.aplicar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: $space-lg; border-bottom: 1px solid $color-border;
+  h2 { font-size: 15px; margin: 0; }
+}
+.aplicar-body { flex: 1; overflow-y: auto; padding: $space-lg; }
+.aplicar-footer {
+  padding: $space-md $space-lg; border-top: 1px solid $color-border;
+  display: flex; justify-content: flex-end; background: #fff;
+}
+
+.bloque { margin-bottom: $space-lg; }
+.bloque-title {
+  font-size: 12px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; color: $color-text-soft; margin-bottom: $space-sm;
+  display: flex; align-items: center; gap: $space-xs;
+  i { color: $color-primary; }
+}
+
+.data-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: $space-md;
+  label { font-size: 11px; color: $color-text-muted; display: block; }
+  span { font-size: 13px; color: $color-text; }
+  .monto { font-weight: 600; }
+}
+
+.saldos {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: $space-sm;
+}
+.saldo-card {
+  padding: $space-md; border: 1px solid $color-border;
+  border-radius: $radius-md; background: $color-bg-soft;
+  display: flex; flex-direction: column; gap: 2px;
+  .label { font-size: 11px; color: $color-text-muted; text-transform: uppercase; letter-spacing: 0.03em; }
+  .valor { font-size: 16px; font-weight: 600; color: $color-text; }
+  &.success .valor { color: $color-success; }
+  &.danger .valor { color: $color-danger; }
+}
+
+/* Banner excedente */
+.banner-excedente {
+  display: flex;
+  gap: $space-md;
+  padding: $space-md $space-lg;
+  border: 1px solid $color-primary;
+  border-radius: $radius-md;
+  background: rgba(91, 133, 232, 0.08);
+  margin-bottom: $space-lg;
+}
+.banner-icon {
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #fff; border-radius: $radius-md;
+  color: $color-primary; font-size: 18px;
+  flex-shrink: 0;
+}
+.banner-content { flex: 1; min-width: 0; }
+.banner-title { font-size: 13px; font-weight: 600; color: $color-text; margin-bottom: 2px; }
+.banner-desc { font-size: 12px; color: $color-text-soft; margin-bottom: $space-sm; }
+.banner-acciones { display: flex; gap: $space-sm; flex-wrap: wrap; }
+
+/* Sugerencias */
+.sugerencia {
+  border: 1px solid $color-border; border-radius: $radius-md;
+  padding: $space-md; margin-bottom: $space-sm; background: $color-bg-soft;
+}
+.sugerencia-header {
+  display: flex; align-items: center; gap: $space-sm; margin-bottom: $space-sm;
+  .score { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: $radius-sm;
+    &.ok { background: #eaf5ec; color: $color-success; }
+    &.warn { background: #fff4e5; color: #b26a00; }
+    &.muted { background: $color-border; color: $color-text-muted; }
+  }
+  .depositante { font-size: 13px; font-weight: 600; color: $color-text; }
+}
+.sugerencia-body {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: $space-sm;
+  label { font-size: 11px; color: $color-text-muted; display: block; }
+  span { font-size: 12px; color: $color-text; }
+  .motivo { color: $color-text-soft; font-style: italic; font-size: 11px; }
+}
+.sugerencia-acciones { margin-top: $space-sm; text-align: right; }
+
+/* Selector manual */
+.selector-manual {
+  margin-top: $space-sm;
+  padding: $space-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-bg-soft;
+}
+.lista-depositos {
+  margin-top: $space-sm;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  max-height: 220px; overflow-y: auto;
+  background: #fff;
+}
+.deposito-item {
+  display: grid; grid-template-columns: 100px 1fr 120px;
+  gap: $space-sm; padding: $space-sm $space-md;
+  font-size: 12px; border-bottom: 1px solid $color-border;
+  cursor: pointer;
+  &:hover { background: $color-bg-soft; }
+  &:last-child { border-bottom: none; }
+  .fecha { color: $color-text-muted; }
+  .dep { color: $color-text; }
+  .disp { color: $color-success; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+}
+
+.deposito-seleccionado {
+  margin-top: $space-sm;
+  padding: $space-md;
+  border: 1px solid $color-primary;
+  border-radius: $radius-md;
+  background: rgba(91,133,232,0.03);
+  .sel-header {
+    display: flex; justify-content: space-between;
+    margin-bottom: $space-sm; font-size: 13px;
+    .fecha { color: $color-text-muted; font-size: 12px; }
+  }
+  .sel-info {
+    display: grid; grid-template-columns: 1fr 1fr; gap: $space-md;
+    margin-bottom: $space-sm;
+    label { font-size: 11px; color: $color-text-muted; display: block; }
+    span { font-size: 13px; color: $color-text; font-weight: 600; }
+  }
+  .monto-input {
+    label { font-size: 11px; color: $color-text-muted; display: block; margin-bottom: 2px; }
+  }
+  .sel-acciones { margin-top: $space-sm; display: flex; gap: $space-sm; }
+}
+
+/* Tabla aplicaciones */
+.tabla-aplicaciones {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+  thead th {
+    text-align: left; padding: $space-sm $space-md;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;
+    color: $color-text-soft; border-bottom: 1px solid $color-border;
+    background: $color-bg-soft;
+  }
+  tbody td {
+    padding: $space-sm $space-md; border-bottom: 1px solid $color-border;
+  }
+  .monto { font-variant-numeric: tabular-nums; font-weight: 500; text-align: right; }
+}
+
+.metodo-tag {
+  font-size: 10px; padding: 2px 6px; border-radius: $radius-sm; font-weight: 600;
+  text-transform: capitalize;
+  &.manual { background: rgba(91,133,232,0.08); color: $color-primary; }
+  &.automatico { background: #eaf5ec; color: $color-success; }
+}
+
+.badge-estado {
+  display: inline-block; padding: 2px 8px; border-radius: $radius-sm; font-size: 11px;
+  font-weight: 600; text-transform: capitalize;
+  &.ok { background: #eaf5ec; color: $color-success; }
+  &.warn { background: #fff4e5; color: #b26a00; }
+  &.danger { background: #fdecec; color: $color-danger; }
+  &.muted { background: $color-bg-soft; color: $color-text-muted; }
+}
+
+.btn-toggle-deposito {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-xs;
+  padding: 6px 12px;
+  border: 1px solid $color-border-strong;
+  background-color: #fff;
+  color: $color-text;
+  border-radius: $radius-md;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background-color: $color-bg-soft;
+    border-color: $color-primary;
+    color: $color-primary;
+  }
+
+  i { font-size: 13px; }
+}
+
+.empty-hint { font-size: 12px; color: $color-text-muted; padding: $space-md; text-align: center; }
+.alert-danger { background: #fdecec; color: $color-danger; padding: $space-sm $space-md; border-radius: $radius-md; font-size: 12px; }
+.btn-close-soft {
+  border: none; background: transparent; color: $color-text-muted; padding: $space-xs;
+  border-radius: $radius-sm; cursor: pointer;
+  &:hover { background: $color-bg-soft; color: $color-text; }
+}
+.spin { display: inline-block; animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.modal-excedente {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: $space-lg;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: #fff;
+  color: $color-text;
+  box-shadow: 0 20px 60px rgba(15, 15, 15, 0.25);
+  &::backdrop { background: rgba(15, 15, 15, 0.45); }
+}
+.excedente-header {
+  display: flex; align-items: center; gap: $space-sm;
+  margin-bottom: $space-lg;
+  h2 { flex: 1; margin: 0; font-size: 17px; }
+}
+.excedente-monto { font-size: 18px; font-weight: 600; }
+.excedente-facturas {
+  display: flex; flex-direction: column; gap: $space-sm;
+  margin: $space-lg 0;
+  button { white-space: normal; }
+}
+.excedente-footer { display: flex; justify-content: flex-end; margin-top: $space-md; }

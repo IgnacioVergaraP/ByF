@@ -1,0 +1,207 @@
+<div class="factura-aplicaciones">
+  <div class="aplicar-header">
+    <h2>Aplicaciones — Factura N° {{ factura?.folio }}</h2>
+    <button type="button" class="btn-close-soft" (click)="cancelar()">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <div class="aplicar-body">
+    <div class="bloque" *ngIf="factura">
+      <div class="data-grid">
+        <div><label>Receptor</label><span>{{ factura.razon_social_receptor }}</span></div>
+        <div><label>Total</label><span class="monto">$ {{ factura.total | number:'1.0-0' }}</span></div>
+      </div>
+    </div>
+
+    <div class="bloque" *ngIf="saldos">
+      <div class="saldos">
+        <div class="saldo-card">
+          <span class="label">Total facturado</span>
+          <span class="valor">$ {{ saldos.total | number:'1.0-0' }}</span>
+        </div>
+        <div class="saldo-card success">
+          <span class="label">Total pagado</span>
+          <span class="valor">$ {{ saldos.total_pagado | number:'1.0-0' }}</span>
+        </div>
+        <div class="saldo-card" [class.danger]="saldos.saldo_pendiente > 0">
+          <span class="label">Saldo pendiente</span>
+          <span class="valor">$ {{ saldos.saldo_pendiente | number:'1.0-0' }}</span>
+        </div>
+        <div class="saldo-card">
+          <span class="label">Estado</span>
+          <span class="badge-estado" [ngClass]="estadoClass(saldos.estado_pago)">
+            {{ saldos.estado_pago }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sugerencias -->
+    <div class="bloque" *ngIf="sugerenciasParaMostrar.length > 0">
+      <div class="bloque-title">
+        <i class="bi bi-lightning-charge"></i> Sugerencias de depósitos
+      </div>
+      <div class="sugerencia" *ngFor="let s of sugerenciasParaMostrar">
+        <div class="sugerencia-header">
+          <span class="score" [ngClass]="scoreClass(s.score)">{{ s.score }}%</span>
+          <span class="depositante">{{ s.arrendatario_nombre }}</span>
+        </div>
+        <div class="sugerencia-body">
+          <div><label>Disponible</label><span>$ {{ s.monto_disponible | number:'1.0-0' }}</span></div>
+          <div><label>Saldo factura</label><span>$ {{ s.factura_saldo | number:'1.0-0' }}</span></div>
+          <div><label>Propiedad</label><span>{{ s.propiedad_nombre }}</span></div>
+          <div><label>Motivo</label><span class="motivo">{{ s.motivo.join(' · ') }}</span></div>
+        </div>
+        <div class="sugerencia-acciones">
+          <button type="button" class="btn btn-primary btn-sm" (click)="aplicarSugerencia(s)" [disabled]="guardando">
+            <i class="bi bi-check2"></i> Aplicar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botón ver todos -->
+    <div class="bloque" *ngIf="saldos && saldos.saldo_pendiente > 0">
+      <button type="button" class="btn-toggle-deposito" (click)="toggleVerTodos()">
+        <i class="bi" [ngClass]="verTodos ? 'bi-chevron-up' : 'bi-search'"></i>
+        {{ verTodos ? 'Ocultar selector de depósitos' : 'Buscar depósito manualmente' }}
+      </button>
+
+      <div class="selector-manual" *ngIf="verTodos">
+        <input
+          type="text"
+          class="form-control-soft"
+          placeholder="Buscar depositante…"
+          [(ngModel)]="busquedaDepositante"
+          (ngModelChange)="aplicarFiltroDepositante()"
+        />
+
+        <div class="lista-depositos" *ngIf="!movimientoSeleccionado">
+          <div
+            class="deposito-item"
+            *ngFor="let m of movimientosFiltrados"
+            (click)="seleccionarMovimiento(m)"
+          >
+            <span class="fecha">{{ m.fecha }}</span>
+            <span class="dep">{{ m.depositante_original || '(sin depositante)' }}</span>
+            <span class="disp">$ {{ m.disponible | number:'1.0-0' }}</span>
+          </div>
+          <div class="empty-hint" *ngIf="movimientosFiltrados.length === 0">
+            No hay depósitos disponibles.
+          </div>
+        </div>
+
+        <div class="deposito-seleccionado" *ngIf="movimientoSeleccionado">
+          <div class="sel-header">
+            <strong>{{ movimientoSeleccionado.depositante_original }}</strong>
+            <span class="fecha">{{ movimientoSeleccionado.fecha }}</span>
+          </div>
+          <div class="sel-info">
+            <div><label>Disponible</label><span>$ {{ movimientoSeleccionado.disponible | number:'1.0-0' }}</span></div>
+            <div><label>Saldo factura</label><span>$ {{ saldos?.saldo_pendiente | number:'1.0-0' }}</span></div>
+          </div>
+          <div class="monto-input">
+            <label>Monto a aplicar</label>
+            <input
+              type="number"
+              class="form-control-soft"
+              [(ngModel)]="montoManual"
+              [max]="movimientoSeleccionado.disponible"
+              min="1"
+            />
+          </div>
+          <div class="sel-acciones">
+            <button type="button" class="btn btn-primary btn-sm" (click)="confirmarManual()" [disabled]="guardando">
+              <i class="bi bi-check2"></i> Aplicar
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="movimientoSeleccionado = null">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bloque" *ngIf="loading">
+      <i class="bi bi-arrow-repeat spin"></i> Cargando…
+    </div>
+
+    <div class="bloque" *ngIf="!loading && aplicaciones.length === 0">
+      <div class="empty-hint">Aún no hay pagos aplicados a esta factura.</div>
+    </div>
+
+    <div class="bloque" *ngIf="!loading && aplicaciones.length > 0">
+      <div class="bloque-title">Pagos aplicados</div>
+      <table class="tabla-aplicaciones">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Método</th>
+            <th>Monto</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of aplicaciones">
+            <td>{{ a.fecha_aplicacion }}</td>
+            <td><span class="metodo-tag" [ngClass]="a.metodo">{{ a.metodo }}</span></td>
+            <td class="monto">$ {{ a.monto_aplicado | number:'1.0-0' }}</td>
+            <td>
+              <button type="button" class="btn btn-ghost btn-sm" (click)="revertir(a)" [disabled]="guardando">
+                <i class="bi bi-arrow-counterclockwise"></i> Revertir
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+  </div>
+
+  <div class="aplicar-footer">
+    <button type="button" class="btn btn-ghost btn-sm" (click)="cancelar()" [disabled]="guardando">
+      Cerrar
+    </button>
+  </div>
+</div>
+<dialog
+  #modalExcedente
+  class="modal-excedente"
+  *ngIf="excedente && excedente.monto_disponible > 0"
+  aria-labelledby="titulo-excedente"
+  aria-describedby="descripcion-excedente"
+  (cancel)="$event.preventDefault(); ignorarExcedente()"
+>
+  <div class="excedente-header">
+    <div class="banner-icon"><i class="bi bi-wallet2" aria-hidden="true"></i></div>
+    <h2 id="titulo-excedente">Depósito con saldo disponible</h2>
+    <button type="button" class="btn-close-soft" aria-label="Cerrar aviso" (click)="ignorarExcedente()" [disabled]="guardando">
+      <i class="bi bi-x-lg" aria-hidden="true"></i>
+    </button>
+  </div>
+  <p class="excedente-monto">Quedan $ {{ excedente.monto_disponible | number:'1.0-0' }} sin aplicar.</p>
+  <p id="descripcion-excedente" class="banner-desc">
+    {{ excedente.facturas_candidatas.length > 0
+      ? 'Puedes aplicar este saldo a otra factura del mismo receptor.'
+      : 'No hay otras facturas pendientes para este receptor. El saldo queda disponible para futuras aplicaciones.' }}
+  </p>
+  <div class="excedente-facturas">
+    <button
+      type="button"
+      class="btn btn-primary"
+      *ngFor="let f of excedente.facturas_candidatas"
+      (click)="aplicarExcedente(f)"
+      [disabled]="guardando"
+    >
+      Aplicar a factura N° {{ f.folio }} ($ {{ f.saldo_pendiente | number:'1.0-0' }})
+    </button>
+  </div>
+  <div class="alert alert-danger" *ngIf="errorMessage" role="alert">{{ errorMessage }}</div>
+  <div class="excedente-footer">
+    <button type="button" class="btn btn-ghost" (click)="ignorarExcedente()" [disabled]="guardando">
+      Dejar saldo disponible
+    </button>
+  </div>
+</dialog>

@@ -1,0 +1,1 @@
+"""Integración con Google Sheets (se implementará en la subetapa 1.7)."""

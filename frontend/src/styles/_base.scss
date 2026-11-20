@@ -1,0 +1,99 @@
+@use 'variables' as *;
+
+body {
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 600;
+  color: $color-text;
+  margin: 0 0 $space-md 0;
+}
+
+h1 {
+  font-size: 20px;
+}
+h2 {
+  font-size: 18px;
+}
+h3 {
+  font-size: 16px;
+}
+
+p {
+  margin: 0 0 $space-md 0;
+  color: $color-text-soft;
+}
+
+/* Botones base */
+.btn {
+  border-radius: $radius-md;
+  font-size: 13px;
+  padding: 6px 12px;
+  border: 1px solid $color-border-strong;
+  background-color: #ffffff;
+  color: $color-text;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
+
+  &:hover {
+    background-color: $color-bg-soft;
+  }
+
+  &-primary {
+    background-color: $color-primary;
+    border-color: $color-primary;
+    color: #ffffff;
+
+    &:hover {
+      background-color: $color-primary-hover;
+      border-color: $color-primary-hover;
+    }
+  }
+
+  &-ghost {
+    background-color: transparent;
+    border-color: transparent;
+
+    &:hover {
+      background-color: $color-bg-soft;
+    }
+  }
+
+  &-sm {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+}
+
+/* Tarjetas simples */
+.card-soft {
+  background-color: #ffffff;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $space-lg;
+  box-shadow: $shadow-sm;
+}
+
+/* Inputs */
+.form-control-soft {
+  width: 100%;
+  border: 1px solid $color-border-strong;
+  border-radius: $radius-md;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: $color-text;
+  background-color: #ffffff;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus {
+    border-color: $color-primary;
+    box-shadow: 0 0 0 2px rgba(47, 111, 237, 0.15);
+  }
+}

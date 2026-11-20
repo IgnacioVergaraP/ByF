@@ -1,0 +1,27 @@
+@use 'styles/variables' as *;
+@use 'styles/base';
+
+/* Import de Bootstrap y Bootstrap Icons */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: $color-bg;
+  color: $color-text;
+  font-family: $font-family-base;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}

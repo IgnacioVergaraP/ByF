@@ -1,0 +1,41 @@
+<div
+  class="doc-card"
+  [class.disabled]="deshabilitado"
+  (dragover)="onDragOver($event)"
+  (drop)="onDrop($event)"
+>
+  <div class="doc-card-icon">
+    <i class="bi" [ngClass]="icono"></i>
+  </div>
+  <div class="doc-card-body">
+    <div class="doc-card-title">
+      {{ titulo }}
+      <span class="badge-soon" *ngIf="etiqueta">{{ etiqueta }}</span>
+    </div>
+    <p class="doc-card-desc">{{ descripcion }}</p>
+
+    <div class="doc-card-action" *ngIf="!deshabilitado">
+      <input
+        type="file"
+        hidden
+        #input
+        [accept]="acepta"
+        (change)="onFileChange($event)"
+      />
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm"
+        (click)="input.click()"
+      >
+        <i class="bi bi-upload"></i> Seleccionar archivo
+      </button>
+      <span class="doc-card-file" *ngIf="archivoNombre">
+        <i class="bi bi-file-earmark"></i> {{ archivoNombre }}
+      </span>
+    </div>
+
+    <div class="doc-card-action disabled-hint" *ngIf="deshabilitado">
+      <i class="bi bi-lock"></i> Disponible en Etapa 2
+    </div>
+  </div>
+</div>

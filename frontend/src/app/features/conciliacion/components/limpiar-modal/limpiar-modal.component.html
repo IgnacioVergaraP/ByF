@@ -1,0 +1,55 @@
+<div class="modal-backdrop" (click)="cancelar()"></div>
+<div class="modal-panel" (click)="$event.stopPropagation()">
+  <div class="modal-header">
+    <h2>Limpiar registros</h2>
+    <button type="button" class="btn-close-soft" (click)="cancelar()" [disabled]="procesando">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <div class="modal-body">
+    <p class="intro">
+      Selecciona qué quieres eliminar. Las opciones no seleccionadas se conservan.
+    </p>
+
+    <div class="opcion" *ngFor="let op of opciones" [class.seleccionada]="op.seleccionada">
+      <label class="opcion-check">
+        <input
+          type="checkbox"
+          [checked]="op.seleccionada"
+          [disabled]="procesando"
+          (change)="toggle(op)"
+        />
+        <div class="opcion-texto">
+          <div class="opcion-titulo">{{ op.titulo }}</div>
+          <div class="opcion-desc">{{ op.descripcion }}</div>
+        </div>
+      </label>
+    </div>
+
+    <div class="nota">
+      <i class="bi bi-info-circle"></i>
+      El maestro (propiedades, arrendatarios, centros de costo, conceptos) <strong>no</strong> se borra desde aquí.
+    </div>
+
+    <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+  </div>
+
+  <div class="modal-footer">
+    <span class="resumen">{{ resumen }}</span>
+    <div class="acciones">
+      <button type="button" class="btn btn-ghost btn-sm" (click)="cancelar()" [disabled]="procesando">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary btn-sm danger"
+        (click)="eliminar()"
+        [disabled]="!haySeleccion || procesando"
+      >
+        <i class="bi bi-trash"></i>
+        {{ procesando ? 'Eliminando…' : 'Eliminar' }}
+      </button>
+    </div>
+  </div>
+</div>

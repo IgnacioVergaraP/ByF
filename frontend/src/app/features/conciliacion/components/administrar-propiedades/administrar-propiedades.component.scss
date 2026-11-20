@@ -1,0 +1,159 @@
+@use '../../../../../styles/variables' as *;
+
+.admin-props {
+  padding: $space-lg;
+}
+
+.admin-props-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: $space-lg;
+  margin-bottom: $space-lg;
+
+  h2 {
+    font-size: 16px;
+    margin: 0 0 $space-xs 0;
+  }
+
+  .admin-props-subtitle {
+    font-size: 12px;
+    color: $color-text-muted;
+    margin: 0;
+  }
+}
+
+.alert {
+  border-radius: $radius-md;
+  padding: $space-sm $space-md;
+  font-size: 12px;
+  margin-bottom: $space-md;
+
+  &-info { background-color: #eef3fd; color: $color-primary; }
+  &-success { background-color: #eaf5ec; color: $color-success; }
+  &-danger { background-color: #fdecec; color: $color-danger; }
+}
+
+.progress-bar-wrapper {
+  height: 4px;
+  margin-top: $space-xs;
+  background-color: rgba(47, 111, 237, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: $color-primary;
+  transition: width 0.2s ease;
+}
+
+.admin-props-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: $space-md;
+  margin-bottom: $space-md;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+
+  &.grow { flex: 1; }
+
+  label {
+    font-size: 11px;
+    color: $color-text-muted;
+    margin-bottom: $space-xs;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+}
+
+.table-wrapper {
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  overflow-x: auto;
+}
+
+.empty-state {
+  padding: $space-2xl $space-lg;
+  text-align: center;
+  color: $color-text-muted;
+  font-size: 13px;
+
+  span { display: block; margin-top: $space-xs; }
+}
+
+.table-soft {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  thead {
+    background-color: $color-bg-soft;
+
+    th {
+      text-align: left;
+      padding: $space-sm $space-md;
+      font-weight: 600;
+      color: $color-text-soft;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      border-bottom: 1px solid $color-border;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid $color-border;
+      &:hover { background-color: $color-bg-soft; }
+      &:last-child { border-bottom: none; }
+    }
+    td {
+      padding: $space-sm $space-md;
+      vertical-align: top;
+      color: $color-text;
+    }
+  }
+
+  .cell-strong { font-weight: 500; }
+}
+
+.badge-cc {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: $radius-sm;
+  background-color: $color-bg-soft;
+  color: $color-text-soft;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  margin: 2px 4px 2px 0;
+  border-radius: $radius-sm;
+  background-color: rgba(47, 111, 237, 0.08);
+  color: $color-primary;
+  font-size: 11px;
+
+  &.tag-soft {
+    background-color: $color-bg-soft;
+    color: $color-text-soft;
+  }
+}
+
+.spin {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

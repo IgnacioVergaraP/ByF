@@ -1,0 +1,255 @@
+<div class="panel-page">
+  <div class="panel-header">
+    <div>
+      <h1>Conciliación bancaria</h1>
+      <p class="panel-subtitle">
+        Gestiona tus depósitos y conciliaciones desde un solo lugar.
+      </p>
+    </div>
+    <div class="panel-header-actions">
+      <div class="vista-toggle">
+        <a class="toggle-item" routerLink="/conciliacion/ingresos" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+          <i class="bi bi-list-ul"></i> Panel
+        </a>
+        <a class="toggle-item" routerLink="/conciliacion/ingresos/mapa" routerLinkActive="active">
+          <i class="bi bi-diagram-3"></i> Mapa
+        </a>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirPanelPropiedades()">
+        <i class="bi bi-sliders"></i> Administrar propiedades
+      </button>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="abrirPanelLimpiar()">
+        <i class="bi bi-trash"></i> Limpiar registros
+      </button>
+    </div>
+  </div>
+
+  <div class="docs-grid">
+    <div class="doc-card">
+      <div class="doc-card-icon"><i class="bi bi-file-earmark-pdf"></i></div>
+      <div class="doc-card-body">
+        <div class="doc-card-title">Subir cartola bancaria</div>
+        <p class="doc-card-desc">
+          Selecciona el centro de costo y luego el PDF del Banco de Chile.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label">Centro de costo</label>
+          <select
+            class="form-control-soft"
+            [value]="centroCostoSeleccionadoId ?? ''"
+            (change)="onCentroCostoChange($event)"
+            [disabled]="procesando || centrosDisponibles.length === 0"
+          >
+            <option value="">Selecciona un centro de costo…</option>
+            <option *ngFor="let cc of centrosDisponibles" [value]="cc.id">
+              {{ cc.codigo }}
+            </option>
+          </select>
+        </div>
+
+        <div class="doc-card-action">
+          <input type="file" hidden #cartolaInput accept=".pdf" (change)="onCartolaInputChange($event)" [disabled]="procesando" />
+          <button type="button" class="btn btn-ghost btn-sm" (click)="cartolaInput.click()" [disabled]="procesando">
+            <i class="bi bi-upload"></i> Seleccionar archivo
+          </button>
+          <span class="doc-card-file" *ngIf="cartolaSeleccionada">
+            <i class="bi bi-file-earmark"></i> {{ cartolaSeleccionada.name }}
+          </span>
+          <button type="button" class="btn btn-primary btn-sm" *ngIf="cartolaSeleccionada" (click)="subirCartola()" [disabled]="!puedeProcesar">
+            {{ procesando ? 'Procesando…' : 'Procesar cartola' }}
+          </button>
+        </div>
+        <div class="progress-bar-wrapper" *ngIf="procesando">
+          <div class="progress-bar-fill" [style.width.%]="progreso"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-card facturas-card">
+      <div class="doc-card-icon"><i class="bi bi-receipt"></i></div>
+      <div class="doc-card-body">
+        <div class="doc-card-title">Carga masiva de facturas</div>
+        <p class="doc-card-desc">Selecciona varios PDF de facturas electrónicas.</p>
+        <div class="doc-card-action">
+          <button type="button" class="btn btn-ghost btn-sm" (click)="abrirCargaFacturas()">
+            <i class="bi bi-upload"></i> Seleccionar PDFs
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert alert-success" *ngIf="mensajeResultado">{{ mensajeResultado }}</div>
+  <div class="alert alert-danger" *ngIf="errorMensaje">{{ errorMensaje }}</div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <span class="summary-label">Total de depósitos</span>
+      <span class="summary-value">{{ totalDepositos }}</span>
+    </div>
+    <div class="summary-card">
+      <span class="summary-label">Depósitos asociados</span>
+      <span class="summary-value">{{ asociados }}</span>
+    </div>
+    <div class="summary-card">
+      <span class="summary-label">Pendientes de asociación</span>
+      <span class="summary-value">{{ pendientes }}</span>
+    </div>
+    <div class="summary-card">
+      <span class="summary-label">Monto total recibido</span>
+      <span class="summary-value">$ {{ montoTotal | number:'1.0-0' }}</span>
+    </div>
+  </div>
+
+  <div class="tabs card-soft">
+    <div class="tabs-header">
+      <button type="button" class="tab-item" [class.active]="tabActiva === 'movimientos'" (click)="cambiarTab('movimientos')">
+        <i class="bi bi-bank"></i> Movimientos bancarios
+        <span class="tab-count">{{ movimientos.length }}</span>
+      </button>
+      <button type="button" class="tab-item" [class.active]="tabActiva === 'facturas'" (click)="cambiarTab('facturas')">
+        <i class="bi bi-receipt"></i> Facturas
+        <span class="tab-count" *ngIf="facturasCount > 0">{{ facturasCount }}</span>
+      </button>
+    </div>
+
+    <div class="tab-content" *ngIf="tabActiva === 'movimientos'">
+      <div class="table-section-header">
+        <div>
+          <h2>Movimientos bancarios</h2>
+          <p class="table-section-subtitle">Abonos extraídos de las cartolas cargadas.</p>
+        </div>
+        <div class="table-section-filters">
+          <div class="search-box">
+            <i class="bi bi-search"></i>
+            <input type="text" class="form-control-soft" placeholder="Buscar depositante…" [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltros()" />
+          </div>
+          <select class="form-control-soft" [(ngModel)]="filtroEstado" (ngModelChange)="aplicarFiltros()">
+            <option value="todos">Todos</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="asociado">Asociado</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="chips-cc" *ngIf="centrosEnMovimientos.length > 0">
+        <button type="button" class="chip" [class.active]="filtroCC === null" (click)="seleccionarCC(null)">
+          Todos <span class="chip-count">{{ movimientos.length }}</span>
+        </button>
+        <button type="button" class="chip" *ngFor="let cc of centrosEnMovimientos"
+                [class.active]="filtroCC === cc.id" (click)="seleccionarCC(cc.id)">
+          {{ cc.codigo }} <span class="chip-count">{{ conteoPorCC(cc.id) }}</span>
+        </button>
+      </div>
+
+      <div *ngIf="cargandoMovimientos" class="empty-state">
+        <i class="bi bi-arrow-repeat spin"></i> Cargando movimientos…
+      </div>
+
+      <div *ngIf="!cargandoMovimientos && movimientosFiltrados.length === 0" class="empty-state">
+        <i class="bi bi-inbox"></i>
+        <p class="empty-title">Aún no hay movimientos</p>
+        <p class="empty-desc">
+          {{ filtroCC ? 'No hay movimientos en este centro de costo.' : 'Carga una cartola bancaria para comenzar a conciliar depósitos.' }}
+        </p>
+      </div>
+
+      <table class="table-soft" *ngIf="!cargandoMovimientos && movimientosFiltrados.length > 0">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Depositante</th>
+            <th>Monto</th>
+            <th>N° Factura</th>
+            <th>Totalidad</th>
+            <th>Arrendatario</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of movimientosFiltrados">
+            <td>{{ m.fecha }}</td>
+            <td>{{ m.depositante_original || '(sin identificar)' }}</td>
+            <td class="cell-monto">$ {{ m.monto | number:'1.0-0' }}</td>
+            <td>
+              <span class="badge-folio" *ngIf="m.factura_folio">{{ etiquetaFactura(m) }}</span>
+              <span class="cell-muted" *ngIf="!m.factura_folio">—</span>
+            </td>
+            <td>
+              <span class="badge-totalidad" [ngClass]="totalidadClass(m)" *ngIf="m.factura_totalidad">
+                {{ etiquetaTotalidad(m) }}
+              </span>
+              <span class="cell-muted" *ngIf="!m.factura_totalidad">—</span>
+            </td>
+            <td>
+              <span class="cell-arrendatario" *ngIf="m.arrendatarios.length > 0">
+                {{ arrendatariosResumen(m) }}
+              </span>
+              <span class="cell-muted" *ngIf="m.arrendatarios.length === 0">—</span>
+            </td>
+            <td class="cell-acciones">
+              <button *ngIf="esPendiente(m)" type="button" class="btn btn-ghost btn-sm" (click)="abrirPanelAsociacion(m)">
+                <i class="bi bi-link-45deg"></i> Asociar
+              </button>
+              <button *ngIf="puedeAplicar(m)" type="button" class="btn btn-primary btn-sm" (click)="abrirPanelAplicarPago(m)">
+                <i class="bi bi-cash"></i> Aplicar
+              </button>
+              <button *ngIf="esAsociado(m)" type="button" class="btn btn-ghost btn-sm" (click)="abrirPanelAsociacion(m)">
+                <i class="bi bi-pencil"></i> Corregir
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tab-content" *ngIf="tabActiva === 'facturas'">
+      <div class="table-section-header">
+        <div>
+          <h2>Facturas importadas</h2>
+          <p class="table-section-subtitle">Documentos tributarios cargados y su asociación al maestro.</p>
+        </div>
+      </div>
+      <app-facturas-panel #facturasPanel (countChange)="onFacturasCountChange($event)"></app-facturas-panel>
+    </div>
+  </div>
+
+  <div class="offcanvas-backdrop" *ngIf="panelPropiedadesAbierto" (click)="cerrarPanelPropiedades()"></div>
+  <div class="offcanvas-panel" [class.open]="panelPropiedadesAbierto">
+    <div class="offcanvas-header">
+      <h3>Administrar propiedades</h3>
+      <button type="button" class="btn-close-soft" (click)="cerrarPanelPropiedades()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="offcanvas-body">
+      <app-administrar-propiedades *ngIf="panelPropiedadesAbierto"></app-administrar-propiedades>
+    </div>
+  </div>
+
+  <div class="offcanvas-backdrop" *ngIf="panelAsociacionAbierto" (click)="cerrarPanelAsociacion()"></div>
+  <div class="offcanvas-panel" [class.open]="panelAsociacionAbierto">
+    <app-asociar-movimiento
+      *ngIf="panelAsociacionAbierto"
+      [movimiento]="movimientoSeleccionado"
+      [modo]="modoAsociacion"
+      (cerrar)="cerrarPanelAsociacion()"
+      (guardado)="onAsociacionGuardada()"
+    ></app-asociar-movimiento>
+  </div>
+
+  <div class="offcanvas-backdrop" *ngIf="panelAplicarPagoAbierto" (click)="cerrarPanelAplicarPago()"></div>
+  <div class="offcanvas-panel" [class.open]="panelAplicarPagoAbierto">
+    <app-aplicar-pago
+      *ngIf="panelAplicarPagoAbierto"
+      [movimiento]="movimientoParaPagar"
+      (cerrar)="cerrarPanelAplicarPago()"
+      (guardado)="onPagoGuardado($event)"
+    ></app-aplicar-pago>
+  </div>
+
+  <app-limpiar-modal
+    *ngIf="panelLimpiarAbierto"
+    (cerrar)="cerrarPanelLimpiar()"
+    (limpiado)="onLimpiezaCompletada()"
+  ></app-limpiar-modal>
+</div>

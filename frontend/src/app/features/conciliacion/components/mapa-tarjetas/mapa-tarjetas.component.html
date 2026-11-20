@@ -1,0 +1,103 @@
+<div class="tarjetas">
+  <div class="toolbar">
+    <input
+      type="text"
+      class="form-control-soft"
+      placeholder="Buscar por arrendatario, propiedad o depositante…"
+      [(ngModel)]="busqueda"
+      (ngModelChange)="aplicarFiltro()"
+    />
+    <span class="count">{{ tarjetasFiltradas.length }} arrendatarios</span>
+  </div>
+
+  <div class="lista">
+    <div
+      class="tarjeta"
+      *ngFor="let t of tarjetasFiltradas; trackBy: trackArr"
+      [class.expandida]="estaExpandida(t.arrendatario.id)"
+    >
+      <!-- Cabecera -->
+      <div class="tarjeta-header" (click)="toggleExpandir(t.arrendatario.id)">
+        <i class="bi"
+           [ngClass]="estaExpandida(t.arrendatario.id) ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+        <div class="tarjeta-titulo">
+          <span class="nombre-arrendatario">{{ t.arrendatario.nombre_original }}</span>
+          <span class="meta">
+            {{ t.propiedades.length }} propiedades ·
+            {{ t.depositantes.length }} depositantes
+          </span>
+        </div>
+        <span class="badge-estado" [class.completo]="t.depositantes.length > 0"
+              [class.incompleto]="t.depositantes.length === 0">
+          {{ t.depositantes.length > 0 ? 'Con depositante' : 'Sin depositante' }}
+        </span>
+      </div>
+
+      <!-- Contenido -->
+      <div class="tarjeta-cuerpo" *ngIf="estaExpandida(t.arrendatario.id)">
+        <div class="seccion">
+          <div class="seccion-titulo">Propiedades</div>
+          <div class="props-lista">
+            <div class="prop-item" *ngFor="let p of t.propiedades">
+              <span class="prop-cc" *ngIf="p.cc">{{ p.cc }}</span>
+              <span>{{ p.nombre_original }}</span>
+            </div>
+            <div class="vacio" *ngIf="t.propiedades.length === 0">
+              (Sin propiedades en el maestro)
+            </div>
+          </div>
+        </div>
+
+        <div class="seccion">
+          <div class="seccion-titulo">Depositantes asociados</div>
+          <div class="deps-lista">
+            <div class="dep-item" *ngFor="let d of t.depositantes">
+              <i class="bi bi-person-check"></i>
+              <span class="dep-nombre">{{ d.nombre_original }}</span>
+              <button type="button" class="btn-remove" (click)="eliminarDeposito(d.arista_id)" title="Quitar">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+            <div class="vacio" *ngIf="t.depositantes.length === 0">
+              Ninguno. Asocia el primero abajo.
+            </div>
+          </div>
+
+          <!-- Agregar depositante -->
+          <div class="agregar-dep" *ngIf="dropAbiertoPara !== t.arrendatario.id">
+            <button type="button" class="btn btn-ghost btn-sm" (click)="abrirDropdown(t.arrendatario.id)">
+              <i class="bi bi-plus-lg"></i> Asociar depositante
+            </button>
+          </div>
+
+          <div class="dropdown-dep" *ngIf="dropAbiertoPara === t.arrendatario.id">
+            <input
+              type="text"
+              class="form-control-soft"
+              placeholder="Buscar depositante…"
+              [(ngModel)]="dropBusqueda"
+              autofocus
+            />
+            <ul>
+              <li *ngFor="let d of depositantesPara(t)">
+                <button type="button" (click)="elegirDepositante(t.arrendatario.id, d)">
+                  {{ d.nombre_original }}
+                </button>
+              </li>
+              <li *ngIf="depositantesPara(t).length === 0" class="vacio">
+                No hay depositantes disponibles para asociar.
+              </li>
+            </ul>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="cerrarDropdown()">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vacio-lista" *ngIf="tarjetasFiltradas.length === 0">
+      No hay arrendatarios que coincidan con la búsqueda.
+    </div>
+  </div>
+</div>

@@ -1,0 +1,109 @@
+<div class="asociar-factura">
+  <div class="asociar-header">
+    <h2>Asociar factura N° {{ factura?.folio }}</h2>
+    <button type="button" class="btn-close-soft" (click)="cancelar()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="asociar-body">
+    <!-- Datos de la factura -->
+    <div class="bloque" *ngIf="factura">
+      <div class="bloque-title">Factura</div>
+      <div class="data-grid">
+        <div><label>Receptor</label><span>{{ factura.razon_social_receptor }}</span></div>
+        <div><label>RUT</label><span>{{ factura.rut_receptor }}</span></div>
+        <div><label>Total</label><span class="monto">$ {{ factura.total | number:'1.0-0' }}</span></div>
+      </div>
+    </div>
+
+    <!-- Identidad aprendida -->
+    <div class="bloque" *ngIf="sugerencias?.identidad_aprendida as ident">
+      <div class="bloque-title"><i class="bi bi-lightning-charge"></i> Identidad aprendida</div>
+      <div class="sugerencia-card">
+        <div class="sugerencia-nombre">{{ ident.arrendatario.nombre_original }}</div>
+        <div class="sugerencia-props">
+          <span class="tag" *ngFor="let p of ident.propiedades">{{ p.nombre_original }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sugerencias -->
+    <div class="bloque" *ngIf="(sugerencias?.sugerencias?.length ?? 0) > 0">
+      <div class="bloque-title">Sugerencias</div>
+      <div class="sugerencia-card" *ngFor="let s of sugerencias?.sugerencias">
+        <div class="sugerencia-nombre">
+          {{ s.nombre }}
+          <span class="score">{{ (s.score * 100) | number:'1.0-0' }}%</span>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="usarSugerencia(s)">
+            Usar
+          </button>
+        </div>
+        <div class="sugerencia-props">
+          <span class="tag" *ngFor="let p of s.propiedades">{{ p.nombre_original }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Buscador -->
+    <div class="bloque">
+      <div class="bloque-title">Seleccionar arrendatario</div>
+      <input
+        type="text"
+        class="form-control-soft"
+        placeholder="Buscar arrendatario…"
+        [(ngModel)]="busquedaArrendatario"
+        (ngModelChange)="filtrarArrendatarios()"
+      />
+      <ul class="lista-arrendatarios" *ngIf="!arrendatarioSeleccionado">
+        <li *ngFor="let a of arrendatariosFiltrados">
+          <button type="button" class="btn-link" (click)="elegirArrendatario(a)">
+            {{ a.nombre_original }}
+          </button>
+        </li>
+      </ul>
+      <div class="seleccionado" *ngIf="arrendatarioSeleccionado">
+        <i class="bi bi-check-circle-fill"></i>
+        {{ arrendatarioSeleccionado.nombre_original }}
+        <button type="button" class="btn btn-ghost btn-sm"
+                (click)="arrendatarioSeleccionado = null; propiedadesDelArrendatario = []">
+          Cambiar
+        </button>
+      </div>
+    </div>
+
+    <!-- Propiedades -->
+    <div class="bloque" *ngIf="arrendatarioSeleccionado">
+      <div class="bloque-title">Propiedades y conceptos</div>
+      <div class="prop-card" *ngFor="let p of propiedadesDelArrendatario">
+        <label class="prop-check">
+          <input type="checkbox" [checked]="p.seleccionada" (change)="toggleSeleccion(p)" />
+          <span>{{ p.nombre }}</span>
+        </label>
+        <div class="conceptos" *ngIf="p.seleccionada">
+          <label *ngFor="let c of p.conceptosDisponibles" class="concepto-check">
+            <input type="checkbox"
+                   [checked]="p.conceptosSeleccionados.includes(c)"
+                   (change)="toggleConcepto(p, c)" />
+            {{ c }}
+          </label>
+        </div>
+      </div>
+      <p class="empty-hint" *ngIf="propiedadesDelArrendatario.length === 0">
+        Este arrendatario no tiene propiedades en el maestro.
+      </p>
+    </div>
+
+    <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+  </div>
+
+  <div class="asociar-footer">
+    <button type="button" class="btn btn-ghost btn-sm" (click)="cancelar()" [disabled]="guardando">
+      Cancelar
+    </button>
+    <button type="button" class="btn btn-primary btn-sm"
+            (click)="confirmar()"
+            [disabled]="guardando || !arrendatarioSeleccionado">
+      <i class="bi bi-check2"></i>
+      {{ guardando ? 'Guardando…' : 'Confirmar asociación' }}
+    </button>
+  </div>
+</div>
