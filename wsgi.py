@@ -5,7 +5,7 @@ import sys
 
 from flask import send_from_directory
 
-BACKEND = Path(__file__).resolve().parent
+BACKEND = Path(__file__).resolve().parent / "backend"
 sys.path.insert(0, str(BACKEND))
 
 from app import create_app  # noqa: E402
