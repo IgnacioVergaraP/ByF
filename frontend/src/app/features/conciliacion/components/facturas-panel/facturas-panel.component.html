@@ -1,32 +1,4 @@
 <div class="facturas">
-  <div class="facturas-upload">
-    <input type="file" hidden #fileInput accept=".pdf" multiple (change)="onFilesSelected($event)" />
-    <button type="button" class="btn btn-ghost btn-sm" (click)="abrirSelector()" [disabled]="procesando">
-      <i class="bi bi-upload"></i> Seleccionar PDFs
-    </button>
-    <span class="hint" *ngIf="archivos.length === 0">Puedes seleccionar varios archivos a la vez.</span>
-    <span class="hint" *ngIf="archivos.length > 0">{{ archivos.length }} archivo(s) seleccionado(s).</span>
-    <button type="button" class="btn btn-primary btn-sm" *ngIf="archivos.length > 0" (click)="importar()" [disabled]="procesando">
-      {{ procesando ? 'Procesando…' : 'Procesar lote' }}
-    </button>
-    <button type="button" class="btn btn-ghost btn-sm" *ngIf="archivos.length > 0" (click)="limpiarSeleccion()" [disabled]="procesando">Limpiar</button>
-  </div>
-
-  <div class="lista-archivos" *ngIf="archivos.length > 0">
-    <div class="archivo-item" *ngFor="let a of archivos; let i = index">
-      <i class="bi bi-file-earmark-pdf"></i>
-      <span>{{ a.name }}</span>
-      <button type="button" class="btn-icon" (click)="quitarArchivo(i)" [disabled]="procesando">
-        <i class="bi bi-x-lg"></i>
-      </button>
-    </div>
-  </div>
-
-  <div class="progress-bar-wrapper" *ngIf="procesando">
-    <div class="progress-bar-fill" [style.width.%]="progreso"></div>
-  </div>
-
-  <div class="alert alert-success" *ngIf="mensaje">{{ mensaje }}</div>
   <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
 
   <div class="toolbar">

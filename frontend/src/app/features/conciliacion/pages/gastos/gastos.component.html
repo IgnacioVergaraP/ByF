@@ -4,7 +4,55 @@
       <h1>Conciliación de gastos</h1>
       <p>Carga el Excel de gastos y concilia sus montos exactos con los cargos de la cartola.</p>
     </div>
+    <div class="centro-gastos">
+      <label class="form-label" for="centro-gastos">Entidad / centro de costo</label>
+      <select id="centro-gastos" class="form-control-soft" [(ngModel)]="centroCostoId" (ngModelChange)="centroCostoCambio()">
+        <option value="">Todas las entidades</option>
+        <option *ngFor="let centro of centros" [value]="centro.id">{{ centro.codigo }}</option>
+      </select>
+    </div>
   </header>
+
+  <div class="upload-grid">
+    <article class="upload-card">
+      <button type="button" class="upload-toggle" [attr.aria-expanded]="cargaCartolaAbierta"
+        aria-controls="carga-cartola-gastos" (click)="cargaCartolaAbierta = !cargaCartolaAbierta">
+        <span class="upload-icon"><i class="bi bi-bank" aria-hidden="true"></i></span>
+        <span>Cargar cartola bancaria</span>
+        <i class="bi upload-chevron" [ngClass]="cargaCartolaAbierta ? 'bi-chevron-up' : 'bi-chevron-down'" aria-hidden="true"></i>
+      </button>
+      <div class="upload-content" id="carga-cartola-gastos" [hidden]="!cargaCartolaAbierta">
+        <p>Los cargos se muestran aquí, separados de los abonos de Ingresos.</p>
+        <div class="upload-actions">
+          <input #cartolaInput type="file" hidden accept=".pdf" (change)="onCartolaSeleccionada($event)" />
+          <button type="button" class="btn btn-ghost btn-sm" (click)="cartolaInput.click()" [disabled]="procesando || !centroCostoId">
+            <i class="bi bi-upload"></i> Seleccionar cartola
+          </button>
+          <span class="file-name" *ngIf="cartola">{{ cartola.name }}</span>
+          <button type="button" class="btn btn-primary btn-sm" (click)="importarCartola()" [disabled]="!cartola || !centroCostoId || procesando">
+            {{ procesando ? 'Procesando…' : 'Procesar cartola' }}
+          </button>
+        </div>
+      </div>
+    </article>
+    <article class="upload-card">
+      <button type="button" class="upload-toggle" [attr.aria-expanded]="cargaExcelAbierta"
+        aria-controls="carga-excel-gastos" (click)="cargaExcelAbierta = !cargaExcelAbierta">
+        <span class="upload-icon"><i class="bi bi-file-earmark-text" aria-hidden="true"></i></span>
+        <span>Cargar Excel de gastos</span>
+        <i class="bi upload-chevron" [ngClass]="cargaExcelAbierta ? 'bi-chevron-up' : 'bi-chevron-down'" aria-hidden="true"></i>
+      </button>
+      <div class="upload-content" id="carga-excel-gastos" [hidden]="!cargaExcelAbierta">
+        <p>Selecciona el Excel (.xlsx) con FECHA, DESTINATARIO y MONTO; también se leerá OBSERVACION. El cruce usa la misma entidad y fechas con hasta 45 días de diferencia. Los montos únicos se concilian automáticamente. Los montos repetidos se comparan por nombre y quedan pendientes de aprobación.</p>
+        <div class="upload-actions">
+          <input #documentoInput type="file" hidden accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" (change)="onDocumentoSeleccionado($event)" />
+          <button type="button" class="btn btn-ghost btn-sm" (click)="documentoInput.click()" [disabled]="procesando || !centroCostoId"><i class="bi bi-upload"></i> Seleccionar Excel</button>
+          <span class="file-name" *ngIf="documento">{{ documento.name }}</span>
+          <button type="button" class="btn btn-primary btn-sm" (click)="subirDocumento()" [disabled]="!documento || !centroCostoId || procesando">{{ procesando ? 'Procesando…' : 'Importar gastos' }}</button>
+        </div>
+      </div>
+    </article>
+  </div>
 
   <div class="alert alert-success" *ngIf="mensaje">{{ mensaje }}</div>
   <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
@@ -20,29 +68,6 @@
     </div>
 
     <div class="tab-content" *ngIf="tabActiva === 'cartola'">
-      <article class="upload-card">
-        <div class="upload-icon"><i class="bi bi-bank"></i></div>
-        <div class="upload-content">
-          <h2>Cargar cartola bancaria</h2>
-          <p>Los cargos se muestran aquí, separados de los abonos de Ingresos.</p>
-          <label class="form-label" for="centro-gastos">Entidad / centro de costo</label>
-          <select id="centro-gastos" class="form-control-soft" [(ngModel)]="centroCostoId" (ngModelChange)="centroCostoCambio()">
-            <option value="">Todas las entidades</option>
-            <option *ngFor="let centro of centros" [value]="centro.id">{{ centro.codigo }}</option>
-          </select>
-          <div class="upload-actions">
-            <input #cartolaInput type="file" hidden accept=".pdf" (change)="onCartolaSeleccionada($event)" />
-            <button type="button" class="btn btn-ghost btn-sm" (click)="cartolaInput.click()" [disabled]="procesando || !centroCostoId">
-              <i class="bi bi-upload"></i> Seleccionar cartola
-            </button>
-            <span class="file-name" *ngIf="cartola">{{ cartola.name }}</span>
-            <button type="button" class="btn btn-primary btn-sm" (click)="importarCartola()" [disabled]="!cartola || !centroCostoId || procesando">
-              {{ procesando ? 'Procesando…' : 'Procesar cartola' }}
-            </button>
-          </div>
-        </div>
-      </article>
-
       <div class="archivos-cargados" *ngIf="cartolasCargadas.length">
         <h2>Cartolas cargadas</h2>
         <div class="archivo-cargado" *ngFor="let archivo of cartolasCargadas">
@@ -138,23 +163,6 @@
     </div>
 
     <div class="tab-content" *ngIf="tabActiva === 'documentos'">
-      <article class="upload-card">
-        <div class="upload-icon"><i class="bi bi-file-earmark-text"></i></div>
-        <div class="upload-content">
-          <h2>Cargar Excel de gastos</h2>
-          <p>Selecciona el Excel (.xlsx) con FECHA, DESTINATARIO y MONTO; también se leerá OBSERVACION. El cruce usa la misma entidad y fechas con hasta 45 días de diferencia. Los montos únicos se concilian automáticamente. Los montos repetidos se comparan por nombre y quedan pendientes de aprobación.</p>
-          <label class="form-label" for="centro-documentos">Entidad / centro de costo</label>
-          <select id="centro-documentos" class="form-control-soft" [(ngModel)]="centroCostoId" (ngModelChange)="centroCostoCambio()">
-            <option value="">Todas las entidades</option><option *ngFor="let centro of centros" [value]="centro.id">{{ centro.codigo }}</option>
-          </select>
-          <div class="upload-actions">
-            <input #documentoInput type="file" hidden accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" (change)="onDocumentoSeleccionado($event)" />
-            <button type="button" class="btn btn-ghost btn-sm" (click)="documentoInput.click()" [disabled]="procesando || !centroCostoId"><i class="bi bi-upload"></i> Seleccionar Excel</button>
-            <span class="file-name" *ngIf="documento">{{ documento.name }}</span>
-            <button type="button" class="btn btn-primary btn-sm" (click)="subirDocumento()" [disabled]="!documento || !centroCostoId || procesando">{{ procesando ? 'Procesando…' : 'Importar gastos' }}</button>
-          </div>
-        </div>
-      </article>
       <section class="archivos-cargados" aria-labelledby="excel-cargados">
         <div class="table-heading">
           <div><h2 id="excel-cargados">Excel cargados</h2></div>

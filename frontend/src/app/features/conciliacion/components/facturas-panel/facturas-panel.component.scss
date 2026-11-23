@@ -1,22 +1,9 @@
 @use '../../../../../styles/variables' as *;
 
 .facturas { display: flex; flex-direction: column; gap: $space-md; }
-.facturas-upload { display: flex; align-items: center; gap: $space-sm; flex-wrap: wrap; }
-.hint { font-size: 12px; color: $color-text-muted; }
-.lista-archivos { display: flex; flex-direction: column; gap: 4px; }
-.archivo-item {
-  display: flex; align-items: center; gap: $space-sm; font-size: 12px;
-  padding: 4px 8px; border: 1px solid $color-border; border-radius: $radius-sm;
-  i { color: $color-danger; }
-  span { flex: 1; }
-}
 .btn-icon { border: none; background: transparent; cursor: pointer; padding: 2px 4px; border-radius: $radius-sm; &:hover { background: $color-bg-soft; } }
 
-.progress-bar-wrapper { height: 4px; background: rgba(47,111,237,0.15); border-radius: 2px; overflow: hidden; }
-.progress-bar-fill { height: 100%; background: $color-primary; transition: width 0.2s ease; }
-
 .alert { border-radius: $radius-md; padding: $space-sm $space-md; font-size: 12px;
-  &-success { background: #eaf5ec; color: $color-success; }
   &-danger { background: #fdecec; color: $color-danger; }
 }
 

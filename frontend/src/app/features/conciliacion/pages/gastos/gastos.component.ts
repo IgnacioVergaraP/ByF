@@ -28,6 +28,8 @@ export class GastosComponent implements OnInit, OnDestroy {
   tabActiva: 'cartola' | 'documentos' = 'cartola';
   centros: CentroCostoDto[] = [];
   centroCostoId = '';
+  cargaCartolaAbierta = false;
+  cargaExcelAbierta = false;
   cartola: File | null = null;
   documento: File | null = null;
   catalogo: GastosCatalogoDto = { categorias: {} };
@@ -131,6 +133,7 @@ export class GastosComponent implements OnInit, OnDestroy {
               ? `La cartola ya estaba cargada (${resultado.cantidad_cargos} cargos).`
               : `Cartola procesada. Se importaron ${resultado.cantidad_cargos} cargos.`;
             this.cartola = null;
+            this.cargaCartolaAbierta = false;
             this.cargar();
           }
         },
@@ -152,6 +155,7 @@ export class GastosComponent implements OnInit, OnDestroy {
             ? 'El Excel ya estaba cargado. Se revisaron sus coincidencias.'
             : `${resultado.cantidad_gastos} gastos importados: ${resultado.conciliados} conciliados, ${resultado.pendientes_aprobacion} pendientes de aprobación y ${resultado.sin_coincidencia} sin coincidencia.`;
           this.documento = null;
+          this.cargaExcelAbierta = false;
           this.cargar();
         },
         error: (err) => this.error = err.error?.error ?? err.message,

@@ -1,11 +1,8 @@
-import {
-  Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, ViewChild,
-} from '@angular/core';
-import { HttpEventType } from '@angular/common/http';
-import { Subject, finalize, takeUntil } from 'rxjs';
+import { Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/core';
+import { Subject, Subscription, finalize, takeUntil } from 'rxjs';
 
 import { FacturaService } from '../../services/factura.service';
-import { EstadoPagoFactura, FacturaDto, FacturaImportResultDto } from '../../models/factura.model';
+import { EstadoPagoFactura, FacturaDto } from '../../models/factura.model';
 
 @Component({
   selector: 'app-facturas-panel',
@@ -14,13 +11,8 @@ import { EstadoPagoFactura, FacturaDto, FacturaImportResultDto } from '../../mod
   standalone: false,
 })
 export class FacturasPanelComponent implements OnInit, OnDestroy {
-  @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
   @Output() countChange = new EventEmitter<number>();
 
-  archivos: File[] = [];
-  procesando = false;
-  progreso = 0;
-  mensaje: string | null = null;
   errorMessage: string | null = null;
 
   facturas: FacturaDto[] = [];
@@ -38,6 +30,7 @@ export class FacturasPanelComponent implements OnInit, OnDestroy {
   facturaAplicaciones: FacturaDto | null = null;
 
   private destroy$ = new Subject<void>();
+  private cargaActual?: Subscription;
 
   constructor(private service: FacturaService) {}
 
@@ -47,60 +40,10 @@ export class FacturasPanelComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  abrirSelector(): void { this.fileInput?.nativeElement.click(); }
-
-  onFilesSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const lista = input.files;
-    if (!lista) return;
-    const nuevos: File[] = [];
-    for (let i = 0; i < lista.length; i++) {
-      const f = lista.item(i);
-      if (f && f.name.toLowerCase().endsWith('.pdf')) nuevos.push(f);
-    }
-    this.archivos = [...this.archivos, ...nuevos];
-    input.value = '';
-  }
-
-  quitarArchivo(idx: number): void { this.archivos.splice(idx, 1); }
-  limpiarSeleccion(): void {
-    this.archivos = [];
-    this.mensaje = null;
-    this.errorMessage = null;
-  }
-
-  importar(): void {
-    if (this.archivos.length === 0 || this.procesando) return;
-    this.procesando = true;
-    this.progreso = 0;
-    this.mensaje = null;
-    this.errorMessage = null;
-
-    this.service.importarLote(this.archivos)
-      .pipe(finalize(() => (this.procesando = false)))
-      .subscribe({
-        next: (event) => {
-          if (event.type === HttpEventType.UploadProgress && event.total) {
-            this.progreso = Math.round((event.loaded / event.total) * 100);
-          } else if (event.type === HttpEventType.Response) {
-            const r = event.body as FacturaImportResultDto;
-            this.progreso = 100;
-            this.mensaje =
-              `Lote procesado: ${r.facturas_validas} válidas, ` +
-              `${r.facturas_duplicadas} duplicadas, ${r.facturas_con_error} con error.`;
-            const errores = r.detalles.flatMap((d) => d.errores);
-            if (errores.length > 0) this.errorMessage = errores.join(' · ');
-            this.archivos = [];
-            this.cargar();
-          }
-        },
-        error: (err) => (this.errorMessage = err.error?.error ?? err.message),
-      });
-  }
-
   cargar(): void {
+    this.cargaActual?.unsubscribe();
     this.cargando = true;
-    this.service.getFacturas()
+    this.cargaActual = this.service.getFacturas()
       .pipe(
         finalize(() => (this.cargando = false)),
         takeUntil(this.destroy$)

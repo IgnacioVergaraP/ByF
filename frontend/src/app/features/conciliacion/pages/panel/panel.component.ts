@@ -5,6 +5,7 @@ import { Subject, finalize, takeUntil } from 'rxjs';
 import { CartolaService } from '../../services/cartola.service';
 import { AsociacionApiService } from '../../services/asociacion.service';
 import { ConciliacionService } from '../../services/conciliacion.service';
+import { FacturaService } from '../../services/factura.service';
 import { FacturasPanelComponent } from '../../components/facturas-panel/facturas-panel.component';
 import {
   CartolaImportResultDto,
@@ -23,9 +24,17 @@ type Tab = 'movimientos' | 'facturas';
   standalone: false
 })
 export class PanelComponent implements OnInit, OnDestroy {
-  @ViewChild('facturasPanel') facturasPanel?: FacturasPanelComponent;
+  @ViewChild(FacturasPanelComponent) private facturasPanel?: FacturasPanelComponent;
 
   tabActiva: Tab = 'movimientos';
+  facturasVisitadas = false;
+  cargaCartolaAbierta = false;
+  cargaFacturasAbierta = false;
+  facturasSeleccionadas: File[] = [];
+  procesandoFacturas = false;
+  progresoFacturas = 0;
+  mensajeCargaFacturas: string | null = null;
+  errorCargaFacturas: string | null = null;
 
   cartolaSeleccionada: File | null = null;
   centroCostoSeleccionadoId: string | null = null;
@@ -71,6 +80,7 @@ export class PanelComponent implements OnInit, OnDestroy {
     private cartolaService: CartolaService,
     private asociacionApi: AsociacionApiService,
     private conciliacion: ConciliacionService,
+    private facturaService: FacturaService,
   ) {}
 
   ngOnInit(): void {
@@ -84,7 +94,10 @@ export class PanelComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  cambiarTab(tab: Tab): void { this.tabActiva = tab; }
+  cambiarTab(tab: Tab): void {
+    this.tabActiva = tab;
+    if (tab === 'facturas') this.facturasVisitadas = true;
+  }
   onFacturasCountChange(count: number): void { this.facturasCount = count; }
 
   loadCentrosDisponibles(): void {
@@ -148,6 +161,7 @@ export class PanelComponent implements OnInit, OnDestroy {
               : `Cartola procesada: ${r.cantidad_movimientos} movimientos. Validación: ${r.validacion_ok ? 'OK' : r.validacion_mensaje}`;
             this.cartolaSeleccionada = null;
             this.centroCostoSeleccionadoId = null;
+            this.cargaCartolaAbierta = false;
             this.loadMovimientos();
             this.loadCentrosEnMovimientos();
           }
@@ -156,9 +170,53 @@ export class PanelComponent implements OnInit, OnDestroy {
       });
   }
 
-  abrirCargaFacturas(): void {
-    this.tabActiva = 'facturas';
-    setTimeout(() => this.facturasPanel?.abrirSelector(), 50);
+  onFacturasSeleccionadas(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const pdfs = Array.from(input.files ?? []).filter((archivo) => archivo.name.toLowerCase().endsWith('.pdf'));
+    this.facturasSeleccionadas = [...this.facturasSeleccionadas, ...pdfs];
+    input.value = '';
+  }
+
+  quitarFacturaSeleccionada(indice: number): void {
+    this.facturasSeleccionadas.splice(indice, 1);
+  }
+
+  limpiarFacturasSeleccionadas(): void {
+    this.facturasSeleccionadas = [];
+    this.mensajeCargaFacturas = null;
+    this.errorCargaFacturas = null;
+  }
+
+  importarFacturas(): void {
+    if (!this.facturasSeleccionadas.length || this.procesandoFacturas) return;
+    this.procesandoFacturas = true;
+    this.progresoFacturas = 0;
+    this.mensajeCargaFacturas = null;
+    this.errorCargaFacturas = null;
+
+    this.facturaService.importarLote(this.facturasSeleccionadas)
+      .pipe(takeUntil(this.destroy$), finalize(() => this.procesandoFacturas = false))
+      .subscribe({
+        next: (event) => {
+          if (event.type === HttpEventType.UploadProgress && event.total) {
+            this.progresoFacturas = Math.round((event.loaded / event.total) * 100);
+          } else if (event.type === HttpEventType.Response && event.body) {
+            const resultado = event.body;
+            this.progresoFacturas = 100;
+            this.mensajeCargaFacturas =
+              `Lote procesado: ${resultado.facturas_validas} válidas, ` +
+              `${resultado.facturas_duplicadas} duplicadas, ${resultado.facturas_con_error} con error.`;
+            const errores = resultado.detalles.flatMap((detalle) => detalle.errores);
+            if (errores.length) this.errorCargaFacturas = errores.join(' · ');
+            this.facturasSeleccionadas = [];
+            if (!resultado.facturas_con_error && (resultado.facturas_validas || resultado.facturas_duplicadas)) {
+              this.cargaFacturasAbierta = false;
+            }
+            this.facturasPanel?.cargar();
+          }
+        },
+        error: (err) => this.errorCargaFacturas = err.error?.error ?? err.message,
+      });
   }
 
   loadMovimientos(): void {

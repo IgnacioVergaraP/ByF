@@ -26,9 +26,13 @@
 
   <div class="docs-grid">
     <div class="doc-card">
-      <div class="doc-card-icon"><i class="bi bi-file-earmark-pdf"></i></div>
-      <div class="doc-card-body">
-        <div class="doc-card-title">Subir cartola bancaria</div>
+      <button type="button" class="doc-card-toggle" [attr.aria-expanded]="cargaCartolaAbierta"
+        aria-controls="carga-cartola-ingresos" (click)="cargaCartolaAbierta = !cargaCartolaAbierta">
+        <span class="doc-card-icon"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i></span>
+        <span>Subir cartola bancaria</span>
+        <i class="bi doc-card-chevron" [ngClass]="cargaCartolaAbierta ? 'bi-chevron-up' : 'bi-chevron-down'" aria-hidden="true"></i>
+      </button>
+      <div class="doc-card-body" id="carga-cartola-ingresos" [hidden]="!cargaCartolaAbierta">
         <p class="doc-card-desc">
           Selecciona el centro de costo y luego el PDF del Banco de Chile.
         </p>
@@ -67,14 +71,41 @@
     </div>
 
     <div class="doc-card facturas-card">
-      <div class="doc-card-icon"><i class="bi bi-receipt"></i></div>
-      <div class="doc-card-body">
-        <div class="doc-card-title">Carga masiva de facturas</div>
-        <p class="doc-card-desc">Selecciona varios PDF de facturas electrónicas.</p>
+      <button type="button" class="doc-card-toggle" [attr.aria-expanded]="cargaFacturasAbierta"
+        aria-controls="carga-pdfs-facturas" (click)="cargaFacturasAbierta = !cargaFacturasAbierta">
+        <span class="doc-card-icon"><i class="bi bi-receipt" aria-hidden="true"></i></span>
+        <span>Carga masiva de facturas</span>
+        <i class="bi doc-card-chevron"
+          [ngClass]="cargaFacturasAbierta ? 'bi-chevron-up' : 'bi-chevron-down'"
+          aria-hidden="true"></i>
+      </button>
+      <div class="doc-card-body" id="carga-pdfs-facturas" [hidden]="!cargaFacturasAbierta">
+        <p class="doc-card-desc">Puedes seleccionar varios PDF de facturas electrónicas.</p>
         <div class="doc-card-action">
-          <button type="button" class="btn btn-ghost btn-sm" (click)="abrirCargaFacturas()">
-            <i class="bi bi-upload"></i> Seleccionar PDFs
+          <input type="file" hidden #facturasInput accept=".pdf" multiple
+            (change)="onFacturasSeleccionadas($event)" [disabled]="procesandoFacturas" />
+          <button type="button" class="btn btn-ghost btn-sm" (click)="facturasInput.click()" [disabled]="procesandoFacturas">
+            <i class="bi bi-upload" aria-hidden="true"></i> Seleccionar PDFs
           </button>
+          <button type="button" class="btn btn-primary btn-sm" *ngIf="facturasSeleccionadas.length"
+            (click)="importarFacturas()" [disabled]="procesandoFacturas">
+            {{ procesandoFacturas ? 'Procesando…' : 'Procesar lote' }}
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" *ngIf="facturasSeleccionadas.length"
+            (click)="limpiarFacturasSeleccionadas()" [disabled]="procesandoFacturas">Limpiar</button>
+        </div>
+        <ul class="list-unstyled mt-2 mb-0" *ngIf="facturasSeleccionadas.length">
+          <li class="d-flex align-items-center justify-content-between gap-2 small"
+            *ngFor="let archivo of facturasSeleccionadas; let i = index">
+            <span class="text-break">{{ archivo.name }}</span>
+            <button type="button" class="btn btn-ghost btn-sm" [disabled]="procesandoFacturas"
+              [attr.aria-label]="'Quitar ' + archivo.name" (click)="quitarFacturaSeleccionada(i)">
+              <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+          </li>
+        </ul>
+        <div class="progress-bar-wrapper" *ngIf="procesandoFacturas">
+          <div class="progress-bar-fill" [style.width.%]="progresoFacturas"></div>
         </div>
       </div>
     </div>
@@ -82,6 +113,8 @@
 
   <div class="alert alert-success" *ngIf="mensajeResultado">{{ mensajeResultado }}</div>
   <div class="alert alert-danger" *ngIf="errorMensaje">{{ errorMensaje }}</div>
+  <div class="alert alert-success" *ngIf="mensajeCargaFacturas">{{ mensajeCargaFacturas }}</div>
+  <div class="alert alert-danger" *ngIf="errorCargaFacturas">{{ errorCargaFacturas }}</div>
 
   <div class="summary-grid">
     <div class="summary-card">
@@ -211,14 +244,14 @@
         [porPagina]="movimientosPorPagina" etiqueta="movimientos"></app-paginacion-lista>
     </div>
 
-    <div class="tab-content" *ngIf="tabActiva === 'facturas'">
+    <div class="tab-content" *ngIf="facturasVisitadas" [hidden]="tabActiva !== 'facturas'">
       <div class="table-section-header">
         <div>
           <h2>Facturas importadas</h2>
           <p class="table-section-subtitle">Documentos tributarios cargados y su asociación al maestro.</p>
         </div>
       </div>
-      <app-facturas-panel #facturasPanel (countChange)="onFacturasCountChange($event)"></app-facturas-panel>
+      <app-facturas-panel (countChange)="onFacturasCountChange($event)"></app-facturas-panel>
     </div>
   </div>
 
