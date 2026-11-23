@@ -5,7 +5,7 @@ import { HttpEventType } from '@angular/common/http';
 import { Subject, finalize, takeUntil } from 'rxjs';
 
 import { FacturaService } from '../../services/factura.service';
-import { FacturaDto, FacturaImportResultDto } from '../../models/factura.model';
+import { EstadoPagoFactura, FacturaDto, FacturaImportResultDto } from '../../models/factura.model';
 
 @Component({
   selector: 'app-facturas-panel',
@@ -26,6 +26,11 @@ export class FacturasPanelComponent implements OnInit, OnDestroy {
   facturas: FacturaDto[] = [];
   facturasFiltradas: FacturaDto[] = [];
   busqueda = '';
+  periodoEmision = '';
+  filtroPago: '' | EstadoPagoFactura = '';
+  filtroAsociacion = '';
+  paginaFacturas = 1;
+  readonly facturasPorPagina = 15;
   cargando = false;
 
   facturaDetalle: FacturaDto | null = null;
@@ -104,19 +109,26 @@ export class FacturasPanelComponent implements OnInit, OnDestroy {
         next: (r) => {
           this.facturas = r.items;
           this.countChange.emit(this.facturas.length);
-          this.aplicarFiltro();
+          this.aplicarFiltro(this.paginaFacturas);
         },
         error: (err) => (this.errorMessage = `Error: ${err.message}`),
       });
   }
 
-  aplicarFiltro(): void {
+  aplicarFiltro(pagina = 1): void {
     const t = this.busqueda.trim().toLowerCase();
-    this.facturasFiltradas = !t ? this.facturas : this.facturas.filter((f) =>
-      (f.folio ?? '').toLowerCase().includes(t) ||
-      (f.razon_social_receptor ?? '').toLowerCase().includes(t) ||
-      (f.rut_receptor ?? '').toLowerCase().includes(t)
-    );
+    this.facturasFiltradas = this.facturas.filter((f) => {
+      const coincideBusqueda = !t
+        || (f.folio ?? '').toLowerCase().includes(t)
+        || (f.razon_social_receptor ?? '').toLowerCase().includes(t)
+        || (f.rut_receptor ?? '').toLowerCase().includes(t);
+      return coincideBusqueda
+        && (!this.periodoEmision || f.fecha_emision?.startsWith(this.periodoEmision))
+        && (!this.filtroPago || f.estado_pago === this.filtroPago)
+        && (!this.filtroAsociacion || f.estado_asociacion === this.filtroAsociacion);
+    });
+    const ultimaPagina = Math.max(1, Math.ceil(this.facturasFiltradas.length / this.facturasPorPagina));
+    this.paginaFacturas = Math.min(pagina, ultimaPagina);
   }
 
   verDetalle(f: FacturaDto): void {

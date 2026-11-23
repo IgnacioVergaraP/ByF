@@ -316,6 +316,17 @@ class GastosService:
         return dict(ok=True, cantidad_eliminada=len(filas))
 
     @staticmethod
+    def eliminar_documento(documento_id):
+        documento = db.session.get(GastoDocumento, documento_id)
+        if documento is None:
+            raise LookupError("Documento no encontrado.")
+        if GastoExcelFila.query.filter_by(documento_id=documento_id).first() is not None:
+            raise ValueError("Este gasto pertenece a un Excel. Bórralo desde Excel cargados.")
+        db.session.delete(documento)
+        db.session.commit()
+        return dict(ok=True)
+
+    @staticmethod
     def _excel_metadata(documento):
         fila = GastoExcelFila.query.filter_by(documento_id=documento.id).first()
         return ({"destinatario": fila.destinatario, "observacion": fila.observacion,

@@ -95,11 +95,19 @@
   h2 { font-size: 15px; margin: 0 0 $space-xs 0; }
   .table-section-subtitle { font-size: 12px; color: $color-text-muted; margin: 0; }
 }
-.table-section-filters { display: flex; gap: $space-sm; align-items: center; }
+.table-section-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 17rem) auto auto;
+  align-items: center;
+  gap: $space-sm;
+  max-width: 100%;
+  .form-control-soft { min-width: 0; }
+}
 .search-box {
   position: relative;
+  min-width: 0;
   i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: $color-text-muted; font-size: 12px; }
-  input { padding-left: 28px; width: 200px; }
+  input { padding-left: 28px; }
 }
 
 .chips-cc {
@@ -208,8 +216,15 @@
 
 @media (max-width: 768px) {
   .table-section-header { flex-direction: column; align-items: flex-start; }
-  .search-box input { width: 100%; }
   .chips-cc { flex-wrap: nowrap; }
   .tab-item { padding: $space-sm $space-md; font-size: 12px; }
+}
+
+@media (max-width: 560px) {
+  .table-section-filters {
+    width: 100%;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    .search-box { grid-column: 1 / -1; }
+  }
 }
 

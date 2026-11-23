@@ -606,6 +606,16 @@ def descargar_gastos_documento(documento_id: str):
         download_name=documento.archivo_nombre,
     )
 
+@bp.route("/gastos/documentos/<documento_id>", methods=["DELETE"])
+def eliminar_gastos_documento(documento_id):
+    from app.modules.conciliacion.services.gastos_service import GastosService
+    try:
+        return jsonify(GastosService.eliminar_documento(documento_id)), 200
+    except LookupError as exc:
+        return jsonify({"error": str(exc)}), 404
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
 
 @bp.route("/gastos/<egreso_id>/asociaciones", methods=["POST"])
 def asociar_gasto_documento(egreso_id: str):

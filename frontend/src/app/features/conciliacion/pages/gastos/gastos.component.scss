@@ -54,3 +54,22 @@
 .archivo-cargado{display:flex;align-items:center;justify-content:space-between;gap:$space-md;padding:$space-sm $space-md;border:1px solid $color-border;border-radius:$radius-md;flex-wrap:wrap}
 .archivo-cargado strong{font-size:12px;overflow-wrap:anywhere}
 .archivo-cargado small{display:block;color:$color-text-muted;font-size:11px;margin-top:3px}
+
+.lista-estado {
+  color: $color-text-muted;
+  font-size: 12px;
+  margin: 0;
+}
+
+.lista-paginacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-sm;
+
+  nav {
+    display: flex;
+    gap: $space-xs;
+  }
+}

@@ -10,9 +10,13 @@ import {
   GastoArchivoDto,
   GastoEgresoDto,
   GastosCatalogoDto,
+  TipoArchivoGastos,
 } from '../../models/gasto.model';
 
 type GastoEditable = GastoEgresoDto;
+type EstadoDocumento = 'conciliado' | 'sugerido' | 'sin_documento';
+type ArchivoParaEliminar = Pick<GastoArchivoDto, 'id' | 'archivo_nombre' | 'centro_costo_id'>
+  & { cantidad?: number };
 
 @Component({
   selector: 'app-conciliacion-gastos',
@@ -32,7 +36,17 @@ export class GastosComponent implements OnInit, OnDestroy {
   egresosFiltrados: GastoEditable[] = [];
   cartolasCargadas: GastoArchivoDto[] = [];
   excelsCargados: GastoArchivoDto[] = [];
-  archivoEliminar: { tipo: 'cartolas' | 'excels'; archivo: GastoArchivoDto } | null = null;
+  excelsFiltrados: GastoArchivoDto[] = [];
+  documentosFiltrados: GastoDocumentoDto[] = [];
+  filtroNombreExcel = '';
+  filtroDestinatario = '';
+  periodoDocumento = '';
+  filtroEstadoDocumento: '' | EstadoDocumento = '';
+  paginaExcel = 1;
+  paginaDocumentos = 1;
+  readonly excelsPorPagina = 5;
+  readonly documentosPorPagina = 15;
+  archivoEliminar: { tipo: TipoArchivoGastos; archivo: ArchivoParaEliminar } | null = null;
   gastoConciliar: GastoEditable | null = null;
   documentoConciliar: GastoDocumentoDto | null = null;
   egresoSeleccionadoId = '';
@@ -49,10 +63,13 @@ export class GastosComponent implements OnInit, OnDestroy {
   filtroSubcategoria = '';
   procesando = false;
   cargando = false;
+  cargandoArchivos = false;
+  cargandoDocumentos = false;
   error: string | null = null;
   mensaje: string | null = null;
 
   private destroy$ = new Subject<void>();
+  private recarga$ = new Subject<void>();
 
   constructor(
     private gastosService: GastosService,
@@ -88,8 +105,15 @@ export class GastosComponent implements OnInit, OnDestroy {
 
   onDocumentoSeleccionado(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.documento = input.files?.[0] ?? null;
+    const archivo = input.files?.[0] ?? null;
     input.value = '';
+    if (archivo && !archivo.name.toLowerCase().endsWith('.xlsx')) {
+      this.documento = null;
+      this.error = 'Selecciona un Excel de gastos en formato .xlsx.';
+      return;
+    }
+    this.error = null;
+    this.documento = archivo;
   }
 
   importarCartola(): void {
@@ -135,18 +159,22 @@ export class GastosComponent implements OnInit, OnDestroy {
   }
 
   cargar(): void {
+    this.recarga$.next();
     this.cargando = true;
+    this.cargandoArchivos = true;
+    this.cargandoDocumentos = true;
     this.gastosService.getArchivos(this.centroCostoId || undefined)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntil(this.recarga$), takeUntil(this.destroy$), finalize(() => this.cargandoArchivos = false))
       .subscribe({
         next: (respuesta) => {
           this.cartolasCargadas = respuesta.cartolas;
           this.excelsCargados = respuesta.excels;
+          this.filtrarExcels();
         },
         error: (err) => this.error = `No se pudieron cargar los archivos: ${err.message}`,
       });
     this.gastosService.getEgresos(this.centroCostoId || undefined)
-      .pipe(finalize(() => this.cargando = false), takeUntil(this.destroy$))
+      .pipe(takeUntil(this.recarga$), takeUntil(this.destroy$), finalize(() => this.cargando = false))
       .subscribe({
         next: (respuesta) => {
           this.egresos = respuesta.items;
@@ -155,14 +183,17 @@ export class GastosComponent implements OnInit, OnDestroy {
         error: (err) => this.error = `No se pudieron cargar los egresos: ${err.message}`,
       });
     this.gastosService.getDocumentos(this.centroCostoId || undefined)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntil(this.recarga$), takeUntil(this.destroy$), finalize(() => this.cargandoDocumentos = false))
       .subscribe({
-        next: (respuesta) => this.documentos = respuesta.items,
+        next: (respuesta) => {
+          this.documentos = respuesta.items;
+          this.filtrarDocumentos();
+        },
         error: (err) => this.error = `No se pudieron cargar los gastos del Excel: ${err.message}`,
       });
   }
 
-  solicitarEliminarArchivo(tipo: 'cartolas' | 'excels', archivo: GastoArchivoDto): void {
+  solicitarEliminarArchivo(tipo: TipoArchivoGastos, archivo: ArchivoParaEliminar): void {
     if (this.procesando) return;
     this.archivoEliminar = { tipo, archivo };
   }
@@ -181,9 +212,11 @@ export class GastosComponent implements OnInit, OnDestroy {
       .pipe(finalize(() => this.procesando = false), takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.mensaje = seleccion.tipo === 'cartolas'
-            ? `Se eliminaron los cargos y conciliaciones de ${seleccion.archivo.archivo_nombre}.`
-            : `Se eliminó ${seleccion.archivo.archivo_nombre} con todas sus filas y conciliaciones.`;
+          this.mensaje = {
+            cartolas: `Se eliminaron los cargos y conciliaciones de ${seleccion.archivo.archivo_nombre}.`,
+            excels: `Se eliminó ${seleccion.archivo.archivo_nombre} con todas sus filas y conciliaciones.`,
+            documentos: `Se eliminó ${seleccion.archivo.archivo_nombre} con sus conciliaciones.`,
+          }[seleccion.tipo];
           this.archivoEliminar = null;
           this.cerrarConciliacion();
           this.cerrarClasificacion();
@@ -197,7 +230,60 @@ export class GastosComponent implements OnInit, OnDestroy {
   }
 
   centroCostoCambio(): void {
+    this.paginaExcel = 1;
+    this.paginaDocumentos = 1;
     this.cargar();
+  }
+
+  aplicarFiltroExcel(): void {
+    this.paginaExcel = 1;
+    this.filtrarExcels();
+    this.aplicarFiltrosDocumentos();
+  }
+
+  aplicarFiltrosDocumentos(): void {
+    this.paginaDocumentos = 1;
+    this.filtrarDocumentos();
+  }
+
+  private filtrarExcels(): void {
+    const nombre = this.normalizarBusqueda(this.filtroNombreExcel);
+    this.excelsFiltrados = this.excelsCargados.filter((archivo) =>
+      !nombre || this.normalizarBusqueda(archivo.archivo_nombre).includes(nombre),
+    );
+    this.paginaExcel = Math.min(this.paginaExcel, this.totalPaginasExcel);
+  }
+
+  private filtrarDocumentos(): void {
+    const nombre = this.normalizarBusqueda(this.filtroNombreExcel);
+    const destinatario = this.normalizarBusqueda(this.filtroDestinatario);
+    this.documentosFiltrados = this.documentos.filter((documento) =>
+      (!nombre || this.normalizarBusqueda(documento.archivo_nombre).includes(nombre))
+      && (!destinatario || this.normalizarBusqueda(documento.destinatario ?? '').includes(destinatario))
+      && (!this.periodoDocumento || documento.fecha_documento?.startsWith(this.periodoDocumento))
+      && (!this.filtroEstadoDocumento || this.estadoDocumento(documento) === this.filtroEstadoDocumento),
+    );
+    this.paginaDocumentos = Math.min(this.paginaDocumentos, this.totalPaginasDocumentos);
+  }
+
+  private normalizarBusqueda(texto: string): string {
+    return texto.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  get totalPaginasExcel(): number {
+    return Math.max(1, Math.ceil(this.excelsFiltrados.length / this.excelsPorPagina));
+  }
+
+  get totalPaginasDocumentos(): number {
+    return Math.max(1, Math.ceil(this.documentosFiltrados.length / this.documentosPorPagina));
+  }
+
+  cambiarPagina(seccion: 'excels' | 'documentos', pagina: number): void {
+    if (seccion === 'excels') {
+      this.paginaExcel = Math.max(1, Math.min(pagina, this.totalPaginasExcel));
+    } else {
+      this.paginaDocumentos = Math.max(1, Math.min(pagina, this.totalPaginasDocumentos));
+    }
   }
 
   subcategorias(): string[] {
@@ -396,9 +482,17 @@ export class GastosComponent implements OnInit, OnDestroy {
     );
   }
 
+  estadoDocumento(documento: GastoDocumentoDto): EstadoDocumento {
+    if (documento.estado === 'pagado') return 'conciliado';
+    return documento.asociaciones.length ? 'sugerido' : 'sin_documento';
+  }
+
   estadoRegistro(documento: GastoDocumentoDto): string {
-    if (documento.estado === 'pagado') return 'Conciliado';
-    return documento.asociaciones.length ? 'Pendiente de aprobación' : 'Sin coincidencia';
+    return {
+      conciliado: 'Conciliado',
+      sugerido: 'Pendiente de aprobación',
+      sin_documento: 'Sin coincidencia',
+    }[this.estadoDocumento(documento)];
   }
 
   clasificacionOrigen(gasto: GastoEditable): string {

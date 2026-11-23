@@ -50,6 +50,9 @@ export class PanelComponent implements OnInit, OnDestroy {
   movimientosFiltrados: MovimientoDto[] = [];
   busqueda = '';
   filtroEstado = 'todos';
+  periodoMovimiento = '';
+  paginaMovimientos = 1;
+  readonly movimientosPorPagina = 15;
   cargandoMovimientos = false;
 
   centrosEnMovimientos: CentroCostoRefDto[] = [];
@@ -172,7 +175,7 @@ export class PanelComponent implements OnInit, OnDestroy {
           this.asociados = r.asociados;
           this.pendientes = r.pendientes;
           this.montoTotal = r.total_abonos;
-          this.aplicarFiltros();
+          this.aplicarFiltros(this.paginaMovimientos);
         },
         error: (err) => (this.errorMensaje = `Error: ${err.message}`),
       });
@@ -187,7 +190,7 @@ export class PanelComponent implements OnInit, OnDestroy {
     return this.movimientos.filter((m) => m.centro_costo?.id === ccId).length;
   }
 
-  aplicarFiltros(): void {
+  aplicarFiltros(pagina = 1): void {
     const term = this.busqueda.trim().toLowerCase();
     this.movimientosFiltrados = this.movimientos.filter((m) => {
       const matchEstado = this.filtroEstado === 'todos'
@@ -195,10 +198,16 @@ export class PanelComponent implements OnInit, OnDestroy {
         || (this.filtroEstado === 'asociado' && m.estado.startsWith('asociado'));
       const matchTerm = !term
         || (m.depositante_original ?? '').toLowerCase().includes(term)
-        || m.descripcion_original.toLowerCase().includes(term);
+        || m.descripcion_original.toLowerCase().includes(term)
+        || (m.factura_folio ?? '').toLowerCase().includes(term)
+        || m.facturas_relacionadas.some((factura) => factura.folio.toLowerCase().includes(term))
+        || m.arrendatarios.some((arrendatario) => arrendatario.nombre_original.toLowerCase().includes(term));
       const matchCC = this.filtroCC === null || m.centro_costo?.id === this.filtroCC;
-      return matchEstado && matchTerm && matchCC;
+      return matchEstado && matchTerm && matchCC
+        && (!this.periodoMovimiento || m.fecha.startsWith(this.periodoMovimiento));
     });
+    const ultimaPagina = Math.max(1, Math.ceil(this.movimientosFiltrados.length / this.movimientosPorPagina));
+    this.paginaMovimientos = Math.min(pagina, ultimaPagina);
   }
 
   abrirPanelPropiedades(): void { this.panelPropiedadesAbierto = true; }

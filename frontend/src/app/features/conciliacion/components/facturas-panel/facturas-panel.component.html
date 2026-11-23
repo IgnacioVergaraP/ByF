@@ -30,9 +30,31 @@
   <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
 
   <div class="toolbar">
-    <input type="text" class="form-control-soft" placeholder="Buscar por folio, razón social o RUT…"
-           [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltro()" />
-    <span class="count">{{ facturasFiltradas.length }} facturas</span>
+    <label class="busqueda-facturas"><span>Buscar factura</span>
+      <input type="search" class="form-control-soft" placeholder="Folio, razón social o RUT…"
+        [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltro()" />
+    </label>
+    <label><span>Período de emisión</span>
+      <input type="month" class="form-control-soft" [(ngModel)]="periodoEmision" (ngModelChange)="aplicarFiltro()" />
+    </label>
+    <label><span>Estado de pago</span>
+      <select class="form-control-soft" [(ngModel)]="filtroPago" (ngModelChange)="aplicarFiltro()">
+        <option value="">Todos</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="parcial">Parcial</option>
+        <option value="pagada">Pagada</option>
+        <option value="requiere_revision">Requiere revisión</option>
+      </select>
+    </label>
+    <label><span>Asociación</span>
+      <select class="form-control-soft" [(ngModel)]="filtroAsociacion" (ngModelChange)="aplicarFiltro()">
+        <option value="">Todas</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="sugerida">Sugerida</option>
+        <option value="asociada_manual">Manual</option>
+        <option value="asociada_automatica">Automática</option>
+      </select>
+    </label>
   </div>
 
   <div *ngIf="cargando" class="empty-state">
@@ -41,7 +63,7 @@
 
   <div *ngIf="!cargando && facturasFiltradas.length === 0" class="empty-state">
     <i class="bi bi-inbox"></i>
-    <p>Aún no hay facturas importadas.</p>
+    <p>{{ facturas.length ? 'No hay facturas que coincidan con los filtros.' : 'Aún no hay facturas importadas.' }}</p>
   </div>
 
   <table class="tabla-facturas" *ngIf="!cargando && facturasFiltradas.length > 0">
@@ -50,6 +72,7 @@
         <th>Folio</th>
         <th>Receptor</th>
         <th>RUT</th>
+        <th>Emisión</th>
         <th>Total</th>
         <th>Pagado</th>
         <th>Saldo</th>
@@ -59,10 +82,11 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let f of facturasFiltradas">
+      <tr *ngFor="let f of facturasFiltradas | slice:(paginaFacturas - 1) * facturasPorPagina:paginaFacturas * facturasPorPagina">
         <td>{{ f.folio }}</td>
         <td>{{ f.razon_social_receptor || '—' }}</td>
         <td>{{ f.rut_receptor || '—' }}</td>
+        <td>{{ f.fecha_emision || '—' }}</td>
         <td class="monto">$ {{ f.total | number:'1.0-0' }}</td>
         <td class="monto">$ {{ f.total_pagado | number:'1.0-0' }}</td>
         <td class="monto">$ {{ f.saldo_pendiente | number:'1.0-0' }}</td>
@@ -88,6 +112,9 @@
       </tr>
     </tbody>
   </table>
+  <app-paginacion-lista *ngIf="!cargando && facturasFiltradas.length"
+    [(pagina)]="paginaFacturas" [cantidad]="facturasFiltradas.length"
+    [porPagina]="facturasPorPagina" etiqueta="facturas"></app-paginacion-lista>
 
   <!-- Modal detalle -->
   <div class="modal-backdrop" *ngIf="facturaDetalle" (click)="cerrarDetalle()"></div>

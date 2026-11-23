@@ -123,9 +123,13 @@
         <div class="table-section-filters">
           <div class="search-box">
             <i class="bi bi-search"></i>
-            <input type="text" class="form-control-soft" placeholder="Buscar depositante…" [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltros()" />
+            <input type="search" class="form-control-soft" placeholder="Depositante, arrendatario o folio…"
+              aria-label="Buscar movimientos" [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltros()" />
           </div>
-          <select class="form-control-soft" [(ngModel)]="filtroEstado" (ngModelChange)="aplicarFiltros()">
+          <input type="month" class="form-control-soft" aria-label="Período del movimiento"
+            [(ngModel)]="periodoMovimiento" (ngModelChange)="aplicarFiltros()" />
+          <select class="form-control-soft" aria-label="Estado de la asociación del movimiento"
+            [(ngModel)]="filtroEstado" (ngModelChange)="aplicarFiltros()">
             <option value="todos">Todos</option>
             <option value="pendiente">Pendiente</option>
             <option value="asociado">Asociado</option>
@@ -149,9 +153,9 @@
 
       <div *ngIf="!cargandoMovimientos && movimientosFiltrados.length === 0" class="empty-state">
         <i class="bi bi-inbox"></i>
-        <p class="empty-title">Aún no hay movimientos</p>
+        <p class="empty-title">{{ movimientos.length ? 'Sin resultados' : 'Aún no hay movimientos' }}</p>
         <p class="empty-desc">
-          {{ filtroCC ? 'No hay movimientos en este centro de costo.' : 'Carga una cartola bancaria para comenzar a conciliar depósitos.' }}
+          {{ movimientos.length ? 'No hay movimientos que coincidan con los filtros.' : 'Carga una cartola bancaria para comenzar a conciliar depósitos.' }}
         </p>
       </div>
 
@@ -168,7 +172,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let m of movimientosFiltrados">
+          <tr *ngFor="let m of movimientosFiltrados | slice:(paginaMovimientos - 1) * movimientosPorPagina:paginaMovimientos * movimientosPorPagina">
             <td>{{ m.fecha }}</td>
             <td>{{ m.depositante_original || '(sin identificar)' }}</td>
             <td class="cell-monto">$ {{ m.monto | number:'1.0-0' }}</td>
@@ -202,6 +206,9 @@
           </tr>
         </tbody>
       </table>
+      <app-paginacion-lista *ngIf="!cargandoMovimientos && movimientosFiltrados.length"
+        [(pagina)]="paginaMovimientos" [cantidad]="movimientosFiltrados.length"
+        [porPagina]="movimientosPorPagina" etiqueta="movimientos"></app-paginacion-lista>
     </div>
 
     <div class="tab-content" *ngIf="tabActiva === 'facturas'">

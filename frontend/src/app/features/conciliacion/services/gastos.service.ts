@@ -8,6 +8,7 @@ import {
   GastoListaDto,
   GastoDocumentoDto,
   GastosCatalogoDto,
+  TipoArchivoGastos,
 } from '../models/gasto.model';
 
 @Injectable({ providedIn: 'root' })
@@ -42,7 +43,7 @@ export class GastosService {
     );
   }
 
-  eliminarArchivo(tipo: 'cartolas' | 'excels', id: string): Observable<{ ok: boolean }> {
+  eliminarArchivo(tipo: TipoArchivoGastos, id: string): Observable<{ ok: boolean }> {
     return this.http.delete<{ ok: boolean }>(`${this.baseUrl}/${tipo}/${id}`);
   }
 

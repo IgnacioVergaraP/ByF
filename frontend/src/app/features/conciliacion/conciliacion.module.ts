@@ -17,6 +17,7 @@ import { AsociarFacturaComponent } from './components/asociar-factura/asociar-fa
 import { AplicarPagoComponent } from './components/aplicar-pago/aplicar-pago.component';
 import { FacturaAplicacionesComponent } from './components/factura-aplicaciones/factura-aplicaciones.component';
 import { GastosComponent } from './pages/gastos/gastos.component';
+import { PaginacionListaComponent } from '../../shared/components/paginacion-lista.component';
 
 @NgModule({
   declarations: [
@@ -28,7 +29,7 @@ import { GastosComponent } from './pages/gastos/gastos.component';
   ],
   imports: [
     CommonModule, HttpClientModule, ReactiveFormsModule, FormsModule,
-    ConciliacionRoutingModule,
+    ConciliacionRoutingModule, PaginacionListaComponent,
   ]
 })
 export class ConciliacionModule {}

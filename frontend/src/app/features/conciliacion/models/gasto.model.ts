@@ -74,3 +74,5 @@ export interface GastoArchivoDto {
   centro_costo_id: string;
   cantidad: number;
 }
+
+export type TipoArchivoGastos = 'cartolas' | 'excels' | 'documentos';

@@ -155,41 +155,115 @@
           </div>
         </div>
       </article>
-      <div class="archivos-cargados" *ngIf="excelsCargados.length">
-        <h2>Excel cargados</h2>
-        <div class="archivo-cargado" *ngFor="let archivo of excelsCargados">
+      <section class="archivos-cargados" aria-labelledby="excel-cargados">
+        <div class="table-heading">
+          <div><h2 id="excel-cargados">Excel cargados</h2></div>
+          <div class="filters">
+            <label><span>Nombre del Excel</span>
+              <input class="form-control-soft" type="search" [(ngModel)]="filtroNombreExcel"
+                (ngModelChange)="aplicarFiltroExcel()" />
+            </label>
+          </div>
+        </div>
+        <p class="lista-estado" *ngIf="cargandoArchivos" role="status">Cargando Excel…</p>
+        <p class="lista-estado" *ngIf="!cargandoArchivos && !excelsFiltrados.length">
+          {{ excelsCargados.length ? 'No hay Excel con ese nombre.' : 'Aún no hay Excel cargados.' }}
+        </p>
+        <div class="archivo-cargado" *ngFor="let archivo of (cargandoArchivos ? [] : excelsFiltrados) | slice:(paginaExcel - 1) * excelsPorPagina:paginaExcel * excelsPorPagina">
           <div><strong>{{ archivo.archivo_nombre }}</strong><small>{{ centroCodigo(archivo.centro_costo_id) }} · {{ archivo.cantidad }} gastos</small></div>
           <button type="button" class="btn btn-danger btn-sm" (click)="solicitarEliminarArchivo('excels', archivo)" [disabled]="procesando" [attr.aria-label]="'Borrar Excel ' + archivo.archivo_nombre"><i class="bi bi-trash" aria-hidden="true"></i> Borrar Excel</button>
         </div>
+        <ng-container *ngIf="!cargandoArchivos && excelsFiltrados.length">
+          <ng-container *ngTemplateOutlet="paginacionExcel; context: {
+            seccion: 'excels', etiqueta: 'Excel cargados', pagina: paginaExcel,
+            paginas: totalPaginasExcel, cantidad: excelsFiltrados.length, porPagina: excelsPorPagina
+          }"></ng-container>
+        </ng-container>
+      </section>
+      <div class="table-heading">
+        <div><h2>Gastos importados</h2><p>Cada fila corresponde a un gasto. Revisa y aprueba las coincidencias propuestas por nombre.</p></div>
+        <div class="filters">
+          <label><span>Destinatario</span>
+            <input class="form-control-soft" type="search" [(ngModel)]="filtroDestinatario"
+              (ngModelChange)="aplicarFiltrosDocumentos()" />
+          </label>
+          <label><span>Período del gasto</span>
+            <input class="form-control-soft" type="month" [(ngModel)]="periodoDocumento"
+              (ngModelChange)="aplicarFiltrosDocumentos()" />
+          </label>
+          <label><span>Estado</span>
+            <select class="form-control-soft" [(ngModel)]="filtroEstadoDocumento"
+              (ngModelChange)="aplicarFiltrosDocumentos()">
+              <option value="">Todos</option>
+              <option value="conciliado">Conciliado</option>
+              <option value="sugerido">Pendiente de aprobación</option>
+              <option value="sin_documento">Sin coincidencia</option>
+            </select>
+          </label>
+        </div>
       </div>
-      <div class="table-heading"><div><h2>Gastos importados</h2><p>Cada fila corresponde a un gasto. Revisa y aprueba las coincidencias propuestas por nombre.</p></div></div>
-      <div class="empty-state" *ngIf="documentos.length === 0"><i class="bi bi-file-earmark-text"></i><p class="empty-title">Aún no hay gastos del Excel</p></div>
-      <div class="table-scroll" *ngIf="documentos.length">
+      <p class="lista-estado" *ngIf="cargandoDocumentos" role="status">Cargando gastos…</p>
+      <div class="empty-state" *ngIf="!cargandoDocumentos && !documentosFiltrados.length">
+        <i class="bi bi-file-earmark-text"></i>
+        <p class="empty-title">{{ documentos.length ? 'No hay gastos que coincidan con los filtros' : 'Aún no hay gastos del Excel' }}</p>
+      </div>
+      <div class="table-scroll" *ngIf="!cargandoDocumentos && documentosFiltrados.length">
         <table class="table-soft">
-          <thead><tr><th>Excel / fila</th><th>Destinatario</th><th>Observación</th><th>Fecha</th><th>Total</th><th>Estado</th><th>Egreso asociado</th><th>Acciones</th></tr></thead>
-          <tbody><tr *ngFor="let documento of documentos">
+          <thead><tr><th>Documento / fila</th><th>Destinatario</th><th>Observación</th><th>Fecha</th><th>Total</th><th>Estado</th><th>Egreso asociado</th><th>Acciones</th></tr></thead>
+          <tbody><tr *ngFor="let documento of documentosFiltrados | slice:(paginaDocumentos - 1) * documentosPorPagina:paginaDocumentos * documentosPorPagina">
             <td><button type="button" class="document-link" (click)="descargarDocumento(documento)">{{ documento.archivo_nombre }}</button><small *ngIf="documento.fila">{{ documento.hoja }} · fila {{ documento.fila }}</small></td>
             <td>{{ documento.destinatario || '—' }}</td>
             <td>{{ documento.observacion || '—' }}</td>
             <td>{{ documento.fecha_documento || '—' }}</td>
             <td>{{ documento.monto === null ? '—' : ('$ ' + (documento.monto | number:'1.0-0')) }}</td>
-            <td><span class="status-badge" [ngClass]="documento.estado === 'pagado' ? 'conciliado' : documento.asociaciones.length ? 'sugerido' : 'sin_documento'">{{ estadoRegistro(documento) }}</span></td>
+            <td><span class="status-badge" [ngClass]="estadoDocumento(documento)">{{ estadoRegistro(documento) }}</span></td>
             <td><span *ngFor="let asociacion of documento.asociaciones">{{ egresoResumen(asociacion.egreso_id) }}<br /></span><span *ngIf="!documento.asociaciones.length" class="muted">—</span></td>
             <td class="actions-cell">
               <button type="button" class="btn btn-ghost btn-sm action-icon" (click)="abrirConciliacionDesdeDocumento(documento)" [title]="documento.asociaciones.length ? 'Revisar o revertir conciliación' : 'Seleccionar egreso'" [attr.aria-label]="documento.asociaciones.length ? 'Revisar o revertir conciliación' : 'Seleccionar egreso'">
                 <i class="bi" [ngClass]="documento.asociaciones.length ? 'bi-link-45deg' : 'bi-bank'" aria-hidden="true"></i>
               </button>
+              <button *ngIf="!documento.fila" type="button" class="btn btn-danger btn-sm action-icon"
+                [disabled]="procesando" title="Borrar documento"
+                [attr.aria-label]="'Borrar documento ' + documento.archivo_nombre"
+                (click)="solicitarEliminarArchivo('documentos', documento)">
+                <i class="bi bi-trash" aria-hidden="true"></i>
+              </button>
             </td>
           </tr></tbody>
         </table>
       </div>
+      <ng-container *ngIf="!cargandoDocumentos && documentosFiltrados.length">
+        <ng-container *ngTemplateOutlet="paginacionExcel; context: {
+          seccion: 'documentos', etiqueta: 'Gastos importados', pagina: paginaDocumentos,
+          paginas: totalPaginasDocumentos, cantidad: documentosFiltrados.length, porPagina: documentosPorPagina
+        }"></ng-container>
+      </ng-container>
+
+      <ng-template #paginacionExcel let-seccion="seccion" let-etiqueta="etiqueta" let-pagina="pagina"
+        let-paginas="paginas" let-cantidad="cantidad" let-porPagina="porPagina">
+        <div class="lista-paginacion">
+          <span class="lista-estado" aria-live="polite">
+            {{ (pagina - 1) * porPagina + 1 }}–{{ pagina === paginas ? cantidad : pagina * porPagina }} de {{ cantidad }}
+          </span>
+          <nav *ngIf="paginas > 1" [attr.aria-label]="'Paginación de ' + etiqueta">
+            <button type="button" class="btn btn-ghost btn-sm" [disabled]="pagina === 1"
+              (click)="cambiarPagina(seccion, pagina - 1)">Anterior</button>
+            <button type="button" class="btn btn-ghost btn-sm" [disabled]="pagina === paginas"
+              (click)="cambiarPagina(seccion, pagina + 1)">Siguiente</button>
+          </nav>
+        </div>
+      </ng-template>
     </div>
   </section>
 
   <div class="modal-backdrop" *ngIf="archivoEliminar as seleccion" (click)="cancelarEliminarArchivo()">
     <section class="gasto-modal" role="dialog" aria-modal="true" aria-labelledby="eliminar-archivo-title" (click)="$event.stopPropagation()">
       <header class="modal-header">
-        <h2 id="eliminar-archivo-title">{{ seleccion.tipo === 'cartolas' ? 'Borrar cartola de Gastos' : 'Borrar Excel de gastos' }}</h2>
+        <h2 id="eliminar-archivo-title" [ngSwitch]="seleccion.tipo">
+          <ng-container *ngSwitchCase="'cartolas'">Borrar cartola de Gastos</ng-container>
+          <ng-container *ngSwitchCase="'excels'">Borrar Excel de gastos</ng-container>
+          <ng-container *ngSwitchCase="'documentos'">Borrar documento de Gastos</ng-container>
+        </h2>
         <button type="button" class="icon-close" (click)="cancelarEliminarArchivo()" [disabled]="procesando" aria-label="Cerrar">×</button>
       </header>
       <div class="modal-body">
@@ -197,6 +271,7 @@
         <p>Entidad: {{ centroCodigo(seleccion.archivo.centro_costo_id) }}</p>
         <p *ngIf="seleccion.tipo === 'cartolas'">Se eliminarán sus {{ seleccion.archivo.cantidad }} cargos y las conciliaciones asociadas en Gastos. Los abonos y conciliaciones de Ingresos se conservarán.</p>
         <p *ngIf="seleccion.tipo === 'excels'">Se eliminarán el archivo, sus {{ seleccion.archivo.cantidad }} filas y sus conciliaciones. Los cargos de cartola quedarán disponibles para conciliar nuevamente.</p>
+        <p *ngIf="seleccion.tipo === 'documentos'">Se eliminarán el documento y sus conciliaciones. Los cargos de cartola quedarán disponibles para conciliar nuevamente.</p>
         <p>Esta acción no se puede deshacer. Podrás volver a cargar el archivo original.</p>
       </div>
       <footer class="modal-footer">

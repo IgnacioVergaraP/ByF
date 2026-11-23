@@ -338,6 +338,32 @@ class GastosServiceTest(unittest.TestCase):
         self.assertEqual(GastoAsociacion.query.count(), 0)
         self.assertEqual(self.service.listar_documentos()[0]['estado'], 'pendiente_pago')
 
+    def test_borrar_documento_suelto_elimina_sus_asociaciones_y_conserva_egreso(self):
+        documento = GastoDocumento(
+            centro_costo_id=self.centro.id, archivo_nombre="factura.pdf",
+            archivo_hash="factura-suelta", content_type="application/pdf", contenido=b"pdf",
+        )
+        db.session.add(documento)
+        db.session.flush()
+        egreso_id, documento_id = self.egreso.id, documento.id
+        db.session.add(GastoAsociacion(egreso_id=egreso_id, documento_id=documento_id,
+                                      estado="confirmada"))
+        db.session.commit()
+
+        respuesta = self.client.delete(f'/api/conciliacion/gastos/documentos/{documento_id}')
+        self.assertEqual(respuesta.status_code, 200, respuesta.get_json())
+        self.assertIsNone(db.session.get(GastoDocumento, documento_id))
+        self.assertEqual(GastoAsociacion.query.count(), 0)
+        self.assertIsNotNone(db.session.get(GastoEgreso, egreso_id))
+
+    def test_borrar_documento_de_excel_requiere_borrar_el_excel(self):
+        self.cargar_excel([('Empresa Norte', 125000)])
+        documento_id = self.service.listar_documentos()[0]['id']
+        respuesta = self.client.delete(f'/api/conciliacion/gastos/documentos/{documento_id}')
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertIsNotNone(db.session.get(GastoDocumento, documento_id))
+        self.assertEqual(GastoAsociacion.query.count(), 1)
+
     def test_borrar_cartola_sin_abonos_elimina_cartola_y_cargos(self):
         cartola_id = self.cartola.id
         respuesta = self.client.delete(f'/api/conciliacion/gastos/cartolas/{cartola_id}')
@@ -347,7 +373,7 @@ class GastosServiceTest(unittest.TestCase):
         self.assertEqual(GastoEgreso.query.count(), 0)
 
     def test_borrar_archivo_inexistente_no_cambia_datos(self):
-        for tipo in ('cartolas', 'excels'):
+        for tipo in ('cartolas', 'excels', 'documentos'):
             respuesta = self.client.delete(f'/api/conciliacion/gastos/{tipo}/no-existe')
             self.assertEqual(respuesta.status_code, 404)
         self.assertEqual(GastoEgreso.query.count(), 1)
