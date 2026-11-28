@@ -5,7 +5,7 @@
 .panel-header {
   display: flex; align-items: flex-start; justify-content: space-between; gap: $space-lg;
   flex-wrap: wrap;
-  h1 { font-size: 22px; margin: 0 0 $space-xs 0; }
+  h1 { font-size: 28px; letter-spacing: -0.025em; margin: 0 0 $space-xs 0; }
   .panel-subtitle { font-size: 13px; color: $color-text-soft; margin: 0; }
 }
 
@@ -25,8 +25,8 @@
 .docs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); align-items: start; gap: $space-lg; }
 
 .doc-card {
-  border: 1px dashed $color-border-strong; border-radius: $radius-lg;
-  background-color: $color-bg-soft;
+  border: 1px solid $color-border; border-radius: $radius-lg;
+  background-color: #fff;
 }
 .doc-card-toggle {
   display: flex; align-items: center; gap: $space-sm;
@@ -42,6 +42,13 @@
   background: #fff; border: 1px solid $color-border;
   display: inline-flex; align-items: center; justify-content: center; color: $color-text-soft;
   i { font-size: 16px; }
+}
+.doc-card-primary {
+  background: #edf4ff;
+  border-color: #d3e1fa;
+
+  .doc-card-toggle { color: #244ea8; }
+  .doc-card-icon { color: inherit; border-color: #d3e1fa; }
 }
 .doc-card-body { padding: 0 $space-md $space-md; }
 .doc-card-desc { font-size: 12px; color: $color-text-muted; margin: 0 0 $space-sm 0; }
@@ -65,12 +72,26 @@
   &-danger { background: #fdecec; color: $color-danger; }
 }
 
-.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: $space-md; }
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: $space-md; }
 .summary-card {
-  padding: $space-lg; border: 1px solid $color-border; border-radius: $radius-md; background: #fff;
+  padding: $space-lg; border: 1px solid $color-border; border-radius: $radius-lg; background: #fff;
   display: flex; flex-direction: column; gap: $space-xs;
-  .summary-label { font-size: 12px; color: $color-text-muted; text-transform: uppercase; letter-spacing: 0.04em; }
-  .summary-value { font-size: 20px; font-weight: 600; color: $color-text; }
+  .summary-label { font-size: 12px; color: $color-text-soft; }
+  .summary-value { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+}
+.summary-card-amount {
+  background: #173470;
+  border-color: #173470;
+  color: #fff;
+
+  .summary-label { color: #dbe6ff; }
+}
+.summary-card-pending {
+  background: #fff7e8;
+  border-color: #f1dbad;
+  color: #794800;
+
+  .summary-label { color: inherit; }
 }
 
 .tabs { padding: 0; overflow: hidden; }
@@ -95,15 +116,12 @@
 .tab-content { padding: $space-lg; }
 
 .table-section-header {
-  padding: 0 0 $space-lg 0; border-bottom: 1px solid $color-border;
-  display: flex; justify-content: space-between; align-items: center;
-  gap: $space-lg; flex-wrap: wrap; margin-bottom: $space-md;
-  h2 { font-size: 15px; margin: 0 0 $space-xs 0; }
-  .table-section-subtitle { font-size: 12px; color: $color-text-muted; margin: 0; }
+  margin-bottom: $space-md;
 }
 .table-section-filters {
   display: grid;
-  grid-template-columns: minmax(0, 17rem) auto auto;
+  grid-template-columns: minmax(0, 20rem) auto auto;
+  width: fit-content;
   align-items: center;
   gap: $space-sm;
   max-width: 100%;
@@ -137,10 +155,7 @@
 }
 
 .empty-state {
-  padding: $space-2xl; text-align: center; color: $color-text-muted;
-  i { font-size: 28px; color: $color-border-strong; display: block; margin-bottom: $space-sm; }
-  .empty-title { font-size: 14px; font-weight: 600; color: $color-text-soft; margin: 0 0 $space-xs 0; }
-  .empty-desc { font-size: 12px; margin: 0; }
+  padding: $space-2xl; text-align: center; color: $color-text-soft;
 }
 
 .table-soft {
@@ -221,7 +236,6 @@
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 @media (max-width: 768px) {
-  .table-section-header { flex-direction: column; align-items: flex-start; }
   .chips-cc { flex-wrap: nowrap; }
   .tab-item { padding: $space-sm $space-md; font-size: 12px; }
 }

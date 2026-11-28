@@ -80,6 +80,44 @@ p {
   box-shadow: $shadow-sm;
 }
 
+.empty-panel {
+  display: grid;
+  justify-items: center;
+  gap: $space-sm;
+  padding: clamp(24px, 5vw, 52px) $space-lg;
+  border: 1px solid #e2e9f3;
+  border-radius: $radius-lg;
+  background: #f7faff;
+  text-align: center;
+
+  .empty-panel-icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin-bottom: $space-xs;
+    border-radius: 12px;
+    background: #e5eeff;
+    color: #244ea8;
+    font-size: 20px;
+  }
+
+  h2 { margin: 0; font-size: 18px; }
+  p { max-width: 38ch; margin: 0; font-size: 13px; }
+
+  .btn-primary {
+    margin-top: $space-sm;
+    padding: 8px 14px;
+    background: #244ea8;
+    border-color: #244ea8;
+    color: #fff;
+    font-weight: 600;
+
+    &:hover { background: #1c3e88; border-color: #1c3e88; }
+    i { margin-right: $space-xs; }
+  }
+}
+
 /* Inputs */
 .form-control-soft {
   width: 100%;

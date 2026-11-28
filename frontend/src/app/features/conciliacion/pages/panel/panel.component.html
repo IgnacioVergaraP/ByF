@@ -1,10 +1,8 @@
 <div class="panel-page">
   <div class="panel-header">
     <div>
-      <h1>Conciliación bancaria</h1>
-      <p class="panel-subtitle">
-        Gestiona tus depósitos y conciliaciones desde un solo lugar.
-      </p>
+      <h1>Conciliación de ingresos</h1>
+      <p class="panel-subtitle">Revisa los depósitos bancarios y aplícalos a sus facturas.</p>
     </div>
     <div class="panel-header-actions">
       <div class="vista-toggle">
@@ -25,8 +23,8 @@
   </div>
 
   <div class="docs-grid">
-    <div class="doc-card">
-      <button type="button" class="doc-card-toggle" [attr.aria-expanded]="cargaCartolaAbierta"
+    <div class="doc-card doc-card-primary">
+      <button #toggleCartola type="button" class="doc-card-toggle" [attr.aria-expanded]="cargaCartolaAbierta"
         aria-controls="carga-cartola-ingresos" (click)="cargaCartolaAbierta = !cargaCartolaAbierta">
         <span class="doc-card-icon"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i></span>
         <span>Subir cartola bancaria</span>
@@ -38,8 +36,9 @@
         </p>
 
         <div class="form-group">
-          <label class="form-label">Centro de costo</label>
+          <label class="form-label" for="centro-cartola-ingresos">Centro de costo</label>
           <select
+            id="centro-cartola-ingresos"
             class="form-control-soft"
             [value]="centroCostoSeleccionadoId ?? ''"
             (change)="onCentroCostoChange($event)"
@@ -116,7 +115,11 @@
   <div class="alert alert-success" *ngIf="mensajeCargaFacturas">{{ mensajeCargaFacturas }}</div>
   <div class="alert alert-danger" *ngIf="errorCargaFacturas">{{ errorCargaFacturas }}</div>
 
-  <div class="summary-grid">
+  <div class="summary-grid" *ngIf="totalDepositos > 0">
+    <div class="summary-card summary-card-amount">
+      <span class="summary-label">Monto total recibido</span>
+      <span class="summary-value">$ {{ montoTotal | number:'1.0-0' }}</span>
+    </div>
     <div class="summary-card">
       <span class="summary-label">Total de depósitos</span>
       <span class="summary-value">{{ totalDepositos }}</span>
@@ -125,13 +128,9 @@
       <span class="summary-label">Depósitos asociados</span>
       <span class="summary-value">{{ asociados }}</span>
     </div>
-    <div class="summary-card">
+    <div class="summary-card" [class.summary-card-pending]="pendientes > 0">
       <span class="summary-label">Pendientes de asociación</span>
       <span class="summary-value">{{ pendientes }}</span>
-    </div>
-    <div class="summary-card">
-      <span class="summary-label">Monto total recibido</span>
-      <span class="summary-value">$ {{ montoTotal | number:'1.0-0' }}</span>
     </div>
   </div>
 
@@ -148,15 +147,11 @@
     </div>
 
     <div class="tab-content" *ngIf="tabActiva === 'movimientos'">
-      <div class="table-section-header">
-        <div>
-          <h2>Movimientos bancarios</h2>
-          <p class="table-section-subtitle">Abonos extraídos de las cartolas cargadas.</p>
-        </div>
+      <div class="table-section-header" *ngIf="movimientos.length">
         <div class="table-section-filters">
           <div class="search-box">
             <i class="bi bi-search"></i>
-            <input type="search" class="form-control-soft" placeholder="Depositante, arrendatario o folio…"
+            <input type="search" class="form-control-soft" placeholder="Depositante, arrendatario o folio"
               aria-label="Buscar movimientos" [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltros()" />
           </div>
           <input type="month" class="form-control-soft" aria-label="Período del movimiento"
@@ -170,7 +165,7 @@
         </div>
       </div>
 
-      <div class="chips-cc" *ngIf="centrosEnMovimientos.length > 0">
+      <div class="chips-cc" *ngIf="movimientos.length && centrosEnMovimientos.length">
         <button type="button" class="chip" [class.active]="filtroCC === null" (click)="seleccionarCC(null)">
           Todos <span class="chip-count">{{ movimientos.length }}</span>
         </button>
@@ -184,12 +179,15 @@
         <i class="bi bi-arrow-repeat spin"></i> Cargando movimientos…
       </div>
 
-      <div *ngIf="!cargandoMovimientos && movimientosFiltrados.length === 0" class="empty-state">
-        <i class="bi bi-inbox"></i>
-        <p class="empty-title">{{ movimientos.length ? 'Sin resultados' : 'Aún no hay movimientos' }}</p>
-        <p class="empty-desc">
-          {{ movimientos.length ? 'No hay movimientos que coincidan con los filtros.' : 'Carga una cartola bancaria para comenzar a conciliar depósitos.' }}
-        </p>
+      <div *ngIf="!cargandoMovimientos && movimientosFiltrados.length === 0" class="empty-panel">
+        <span class="empty-panel-icon" aria-hidden="true"><i class="bi bi-bank"></i></span>
+        <h2>{{ movimientos.length ? 'Sin resultados' : 'Aún no hay movimientos' }}</h2>
+        <p>{{ movimientos.length ? 'Prueba con otros filtros.' : 'Importa una cartola del Banco de Chile en PDF para ver los depósitos recibidos.' }}</p>
+        <button *ngIf="!movimientos.length" type="button" class="btn btn-primary"
+          aria-controls="carga-cartola-ingresos"
+          (click)="cargaCartolaAbierta = true; toggleCartola.focus()">
+          <i class="bi bi-upload" aria-hidden="true"></i> Cargar cartola
+        </button>
       </div>
 
       <table class="table-soft" *ngIf="!cargandoMovimientos && movimientosFiltrados.length > 0">

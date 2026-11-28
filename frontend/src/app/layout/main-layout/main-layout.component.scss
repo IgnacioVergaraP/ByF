@@ -3,7 +3,7 @@
 .app-shell {
   display: flex;
   min-height: 100vh;
-  background-color: $color-bg;
+  background-color: #f4f6fa;
 }
 
 .app-content {
@@ -15,7 +15,7 @@
 
 .app-main {
   flex: 1;
-  padding: $space-xl;
+  padding: $space-2xl;
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;

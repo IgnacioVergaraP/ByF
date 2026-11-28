@@ -2,11 +2,11 @@
   <header class="gastos-header">
     <div>
       <h1>Conciliación de gastos</h1>
-      <p>Carga el Excel de gastos y concilia sus montos exactos con los cargos de la cartola.</p>
+      <p>Revisa los cargos bancarios y crúzalos con los gastos de tu Excel.</p>
     </div>
     <div class="centro-gastos">
       <label class="form-label" for="centro-gastos">Entidad / centro de costo</label>
-      <select id="centro-gastos" class="form-control-soft" [(ngModel)]="centroCostoId" (ngModelChange)="centroCostoCambio()">
+      <select #selectorCentro id="centro-gastos" class="form-control-soft" [(ngModel)]="centroCostoId" (ngModelChange)="centroCostoCambio()">
         <option value="">Todas las entidades</option>
         <option *ngFor="let centro of centros" [value]="centro.id">{{ centro.codigo }}</option>
       </select>
@@ -14,15 +14,15 @@
   </header>
 
   <div class="upload-grid">
-    <article class="upload-card">
-      <button type="button" class="upload-toggle" [attr.aria-expanded]="cargaCartolaAbierta"
+    <article class="upload-card upload-card-primary">
+      <button #toggleCartola type="button" class="upload-toggle" [attr.aria-expanded]="cargaCartolaAbierta"
         aria-controls="carga-cartola-gastos" (click)="cargaCartolaAbierta = !cargaCartolaAbierta">
         <span class="upload-icon"><i class="bi bi-bank" aria-hidden="true"></i></span>
         <span>Cargar cartola bancaria</span>
         <i class="bi upload-chevron" [ngClass]="cargaCartolaAbierta ? 'bi-chevron-up' : 'bi-chevron-down'" aria-hidden="true"></i>
       </button>
       <div class="upload-content" id="carga-cartola-gastos" [hidden]="!cargaCartolaAbierta">
-        <p>Los cargos se muestran aquí, separados de los abonos de Ingresos.</p>
+        <p>{{ centroCostoId ? 'Selecciona el PDF del Banco de Chile.' : 'Selecciona un centro de costo para cargar el PDF.' }}</p>
         <div class="upload-actions">
           <input #cartolaInput type="file" hidden accept=".pdf" (change)="onCartolaSeleccionada($event)" />
           <button type="button" class="btn btn-ghost btn-sm" (click)="cartolaInput.click()" [disabled]="procesando || !centroCostoId">
@@ -36,13 +36,14 @@
       </div>
     </article>
     <article class="upload-card">
-      <button type="button" class="upload-toggle" [attr.aria-expanded]="cargaExcelAbierta"
+      <button #toggleExcel type="button" class="upload-toggle" [attr.aria-expanded]="cargaExcelAbierta"
         aria-controls="carga-excel-gastos" (click)="cargaExcelAbierta = !cargaExcelAbierta">
         <span class="upload-icon"><i class="bi bi-file-earmark-text" aria-hidden="true"></i></span>
         <span>Cargar Excel de gastos</span>
         <i class="bi upload-chevron" [ngClass]="cargaExcelAbierta ? 'bi-chevron-up' : 'bi-chevron-down'" aria-hidden="true"></i>
       </button>
       <div class="upload-content" id="carga-excel-gastos" [hidden]="!cargaExcelAbierta">
+        <p *ngIf="!centroCostoId">Selecciona un centro de costo para cargar el Excel.</p>
         <p>Selecciona el Excel (.xlsx) con FECHA, DESTINATARIO y MONTO; también se leerá OBSERVACION. El cruce usa la misma entidad y fechas con hasta 45 días de diferencia. Los montos únicos se concilian automáticamente. Los montos repetidos se comparan por nombre y quedan pendientes de aprobación.</p>
         <div class="upload-actions">
           <input #documentoInput type="file" hidden accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" (change)="onDocumentoSeleccionado($event)" />
@@ -76,8 +77,7 @@
         </div>
       </div>
 
-      <div class="table-heading">
-        <div><h2>Cargos / egresos</h2><p>Clasificación y conciliación son procesos independientes.</p></div>
+      <div class="table-heading" *ngIf="egresos.length">
         <div class="filters">
           <label><span>Período</span><input class="form-control-soft" type="month" [(ngModel)]="periodo" (ngModelChange)="aplicarFiltros()" /></label>
           <label><span>Conciliación</span>
@@ -103,10 +103,16 @@
         </div>
       </div>
 
-      <div class="empty-state" *ngIf="cargando"><i class="bi bi-arrow-repeat spin"></i> Cargando registros de cartola…</div>
-      <div class="empty-state" *ngIf="!cargando && egresosFiltrados.length === 0">
-        <i class="bi bi-inbox"></i><p class="empty-title">No hay cargos para mostrar</p>
-        <p class="empty-desc">Carga la cartola. Si ya fue importada antes, vuelve a seleccionarla para recuperar sus cargos.</p>
+      <p class="lista-estado" *ngIf="cargando" role="status">Cargando registros de cartola…</p>
+      <div class="empty-panel" *ngIf="!cargando && egresosFiltrados.length === 0">
+        <span class="empty-panel-icon" aria-hidden="true"><i class="bi bi-bank"></i></span>
+        <h2>{{ egresos.length ? 'Sin resultados' : 'Aún no hay cargos bancarios' }}</h2>
+        <p>{{ egresos.length ? 'Prueba con otros filtros.' : 'Importa una cartola en PDF para revisar los cargos y cruzarlos con tus gastos.' }}</p>
+        <button *ngIf="!egresos.length" type="button" class="btn btn-primary"
+          aria-controls="carga-cartola-gastos"
+          (click)="cargaCartolaAbierta = true; (centroCostoId ? toggleCartola : selectorCentro).focus()">
+          <i class="bi bi-upload" aria-hidden="true"></i> Cargar cartola
+        </button>
       </div>
 
       <div class="table-scroll" *ngIf="!cargando && egresosFiltrados.length">
@@ -166,7 +172,7 @@
       <section class="archivos-cargados" aria-labelledby="excel-cargados">
         <div class="table-heading">
           <div><h2 id="excel-cargados">Excel cargados</h2></div>
-          <div class="filters">
+          <div class="filters" *ngIf="excelsCargados.length">
             <label><span>Nombre del Excel</span>
               <input class="form-control-soft" type="search" [(ngModel)]="filtroNombreExcel"
                 (ngModelChange)="aplicarFiltroExcel()" />
@@ -188,7 +194,7 @@
           }"></ng-container>
         </ng-container>
       </section>
-      <div class="table-heading">
+      <div class="table-heading" *ngIf="documentos.length">
         <div><h2>Gastos importados</h2><p>Cada fila corresponde a un gasto. Revisa y aprueba las coincidencias propuestas por nombre.</p></div>
         <div class="filters">
           <label><span>Destinatario</span>
@@ -211,9 +217,15 @@
         </div>
       </div>
       <p class="lista-estado" *ngIf="cargandoDocumentos" role="status">Cargando gastos…</p>
-      <div class="empty-state" *ngIf="!cargandoDocumentos && !documentosFiltrados.length">
-        <i class="bi bi-file-earmark-text"></i>
-        <p class="empty-title">{{ documentos.length ? 'No hay gastos que coincidan con los filtros' : 'Aún no hay gastos del Excel' }}</p>
+      <div class="empty-panel" *ngIf="!cargandoDocumentos && !documentosFiltrados.length">
+        <span class="empty-panel-icon" aria-hidden="true"><i class="bi bi-file-earmark-spreadsheet"></i></span>
+        <h2>{{ documentos.length ? 'Sin resultados' : 'Aún no hay gastos del Excel' }}</h2>
+        <p>{{ documentos.length ? 'Prueba con otros filtros.' : 'Importa un Excel para revisar sus gastos y las coincidencias con la cartola.' }}</p>
+        <button *ngIf="!documentos.length" type="button" class="btn btn-primary"
+          aria-controls="carga-excel-gastos"
+          (click)="cargaExcelAbierta = true; (centroCostoId ? toggleExcel : selectorCentro).focus()">
+          <i class="bi bi-upload" aria-hidden="true"></i> Cargar Excel
+        </button>
       </div>
       <div class="table-scroll" *ngIf="!cargandoDocumentos && documentosFiltrados.length">
         <table class="table-soft">

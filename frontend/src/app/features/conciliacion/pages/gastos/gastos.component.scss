@@ -1,9 +1,9 @@
 @use '../../../../../styles/variables' as *;
 
-.gastos-page{display:flex;flex-direction:column;gap:$space-lg}
+.gastos-page{display:flex;flex-direction:column;gap:$space-xl}
 .gastos-header,.table-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:$space-md;flex-wrap:wrap}
-.gastos-header h1{font-size:22px;margin:0 0 $space-xs}
-.gastos-header p,.table-heading p{color:$color-text-muted;font-size:12px;margin:0}
+.gastos-header h1{font-size:28px;letter-spacing:-0.025em;margin:0 0 $space-xs}
+.gastos-header p,.table-heading p{color:$color-text-soft;font-size:13px;margin:0}
 .table-heading{padding-bottom:$space-md;border-bottom:1px solid $color-border}
 .tabs{padding:0;overflow:hidden}
 .tabs-header{display:flex;border-bottom:1px solid $color-border;background:$color-bg-soft}
@@ -18,7 +18,7 @@
   align-items: start;
   gap: $space-lg;
 }
-.upload-card { border: 1px dashed $color-border-strong; border-radius: $radius-lg; background: $color-bg-soft; }
+.upload-card { border: 1px solid $color-border; border-radius: $radius-lg; background: #fff; }
 .upload-toggle {
   display: flex; align-items: center; gap: $space-sm; width: 100%;
   padding: $space-sm $space-md; border: 0; border-radius: inherit;
@@ -30,6 +30,13 @@
 .upload-icon {
   display: grid; place-items: center; flex: 0 0 32px; height: 32px;
   background: #fff; border: 1px solid $color-border; border-radius: $radius-md; color: $color-text-soft;
+}
+.upload-card-primary {
+  background: #edf4ff;
+  border-color: #d3e1fa;
+
+  .upload-toggle { color: #244ea8; }
+  .upload-icon { color: inherit; border-color: #d3e1fa; }
 }
 .upload-content { padding: 0 $space-md $space-md; }
 .upload-content p { color: $color-text-muted; font-size: 12px; margin: 0 0 $space-sm; }

@@ -3,8 +3,8 @@
 .sidebar {
   width: $sidebar-width;
   min-height: 100vh;
-  background-color: $color-sidebar;
-  border-right: 1px solid $color-border;
+  background-color: #fff;
+  border-right: 1px solid #e2e7ef;
   display: flex;
   flex-direction: column;
   padding: $space-md 0;
@@ -18,13 +18,13 @@
   display: flex;
   align-items: center;
   gap: $space-sm;
-  padding: 0 $space-lg $space-md;
+  padding: 0 $space-lg $space-xl;
   font-weight: 600;
   font-size: 15px;
   color: $color-text;
 
   i {
-    color: $color-primary;
+    color: #244ea8;
     font-size: 18px;
   }
 }
@@ -44,34 +44,6 @@
   }
 }
 
-.nav-section-title {
-  display: flex;
-  align-items: center;
-  gap: $space-sm;
-  padding: 8px $space-md;
-  color: $color-text-soft;
-  font-size: 13px;
-  font-weight: 600;
-
-  i {
-    width: 16px;
-    text-align: center;
-    color: $color-text-muted;
-  }
-}
-
-.nav-sublist {
-  list-style: none;
-  margin: 0;
-  padding: 0 0 0 $space-md;
-}
-
-.nav-item.nav-subitem {
-  font-size: 12px;
-  padding-top: 6px;
-  padding-bottom: 6px;
-}
-
 .nav-item {
   display: flex;
   align-items: center;
@@ -80,6 +52,7 @@
   border-radius: $radius-md;
   font-size: 13px;
   color: $color-text-soft;
+  text-decoration: none;
   transition: background-color 0.15s ease, color 0.15s ease;
 
   i {
@@ -95,12 +68,12 @@
   }
 
   &.active {
-    background-color: rgba(47, 111, 237, 0.08);
-    color: $color-primary;
-    font-weight: 500;
+    background-color: #eaf1ff;
+    color: #244ea8;
+    font-weight: 600;
 
     i {
-      color: $color-primary;
+      color: inherit;
     }
   }
 }
@@ -110,4 +83,22 @@
   border-top: 1px solid $color-border;
   color: $color-text-muted;
   font-size: 11px;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    min-height: 0;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: $space-sm;
+    border-right: 0;
+    border-bottom: 1px solid #e2e7ef;
+  }
+
+  .sidebar-brand { padding: 0 $space-sm; }
+  .nav-list { display: flex; gap: $space-xs; }
+  .sidebar-footer { display: none; }
 }
